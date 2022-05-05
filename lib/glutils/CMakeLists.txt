@@ -3,11 +3,13 @@ project(glutils)
 cmake_minimum_required(VERSION 3.22)
 
 SET(HEADERS
-	include/ogl_utils.h
+	include/glutils.h
+	include/primitives.h
 )
 
 SET(CPP
-	cpp/ogl_utils.cpp
+	cpp/glutils.cpp
+	cpp/primitives.cpp
 )
 
 SET(SRC ${HEADERS} ${CPP})

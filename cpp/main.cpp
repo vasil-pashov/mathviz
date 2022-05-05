@@ -1,6 +1,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <array>
 #include "error_code.h"
+#include "glutils.h"
+#include "primitives.h"
 
 void logError(const char* error) {
 	printf("[Error] %s\n", error);
@@ -10,6 +13,29 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 	// make sure the viewport matches the new window dimensions; note that width and 
 	// height will be significantly larger than specified on retina displays.
 	glViewport(0, 0, width, height);
+}
+
+
+const char* getLineVertexShader() {
+	return
+		"#version 330 core\n"
+		"layout(location = 0) in vec3 position;\n"
+		"layout(location = 1) in vec3 color;\n"
+		"out vec3 vertexColor;\n"
+		"void main() {\n"
+		"	gl_Position = vec4(position, 1.0f);\n"
+		"	vertexColor = color;\n"
+		"}\n";
+}
+
+const char* getLineFragmentShader() {
+	return
+		"#version 330 core\n"
+		"in vec3 vertexColor;\n"
+		"out vec4 FragColor;\n"
+		"void main() {\n"
+		"	FragColor = vec4(vertexColor, 1.0f);\n"
+		"}\n";
 }
 
 int main() {
@@ -33,9 +59,29 @@ int main() {
 		return -1;
 	}
 
+	GLUtils::Program p;
+	EC::ErrorCode err = p.initFromSources(getLineVertexShader(), getLineFragmentShader());
+	if (err.hasError()) {
+		logError(err.getMessage());
+		return err.getStatus();
+	}
+
+	GLUtils::Line l({ 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, 6);
+	err = l.upload();
+	if (err.hasError()) {
+		logError(err.getMessage());
+		return err.getStatus();
+	}
+
+	glEnable(GL_LINE_SMOOTH);
+
 	while (!glfwWindowShouldClose(window)) {
 		/* Render here */
+
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        p.bind();
+        l.draw();
+        // l2.draw();
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
 

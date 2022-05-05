@@ -2,7 +2,7 @@
 #include <memory>
 #include <array>
 #include "glad/glad.h" 
-#include "ogl_utils.h"
+#include "glutils.h"
 #include "error_code.h"
 
 namespace GLUtils {
@@ -81,6 +81,23 @@ namespace GLUtils {
 		}
 	}
 
+	inline static int getTypeSize(VertexType type) {
+		switch (type) {
+			case GLUtils::VertexType::Int: return 4;
+			case GLUtils::VertexType::Float: return 4;
+			default:
+			{
+				assert(false);
+				return 0;
+			}
+		}
+	}
+
+	void BufferLayout::addAttribute(VertexType type, int count, bool normalized) {
+		layout.push_back({ count, type, normalized });
+		stride += getTypeSize(type) * count;
+	}
+
 	Buffer::Buffer(Buffer&& other) noexcept {
 		this->handle = other.handle;
 		this->type = other.type;
@@ -92,40 +109,34 @@ namespace GLUtils {
 	}
 
 	EC::ErrorCode Buffer::init(BufferType type) {
-		RETURN_ON_ERROR(glGenBuffers(1, &handle));
+		RETURN_ON_GL_ERROR(glGenBuffers(1, &handle));
 		this->type = convertBufferType(type);
 		return EC::ErrorCode();
 	}
 
 	EC::ErrorCode Buffer::upload(int64_t size, const void* data) {
-		RETURN_ON_ERROR(glBindBuffer(type, handle));
-		RETURN_ON_ERROR(glBufferData(type, size, data, GL_STATIC_DRAW));
+		RETURN_ON_GL_ERROR(glBindBuffer(type, handle));
+		RETURN_ON_GL_ERROR(glBufferData(type, size, data, GL_STATIC_DRAW));
 		return EC::ErrorCode();
 	}
 
-	template<typename T, typename ...Args>
-	EC::ErrorCode Buffer::setLayout(const T& layout, Args &... args) {
-		RETURN_ON_ERROR_CODE(setLayout(layout));
-		return setLayout(args...);
-	}
-
-	template<typename T>
-	EC::ErrorCode Buffer::setLayout(const T& layout) {
-		return setLayout(layout);
-	}
-
-	EC::ErrorCode Buffer::setLayout(const AttributeLayout& layout) {
-		RETURN_ON_ERROR(glBindBuffer(type, handle));
-		const GLenum atribType = convertVertexType(layout.type);
-		RETURN_ON_ERROR(glVertexAttribPointer(
-			layout.slot,
-			layout.componentSize,
-			atribType,
-			GL_FALSE,
-			layout.stride,
-			(void*)layout.offset
-		));
-		RETURN_ON_ERROR(glEnableVertexAttribArray(layout.slot));
+	EC::ErrorCode Buffer::setLayout(const BufferLayout& layout) {
+		RETURN_ON_ERROR_CODE(bind());
+		int offset = 0;
+		for (int i = 0; i < layout.getAttributes().size(); ++i) {
+			AttributeLayout attribute = layout.getAttributes()[i];
+			const GLenum attribType = convertVertexType(attribute.type);
+			RETURN_ON_GL_ERROR(glVertexAttribPointer(
+				i,
+				attribute.count,
+				attribType,
+				attribute.normalized ? GL_TRUE : GL_FALSE,
+				layout.getStride(),
+				(const void*)offset
+			));
+			RETURN_ON_GL_ERROR(glEnableVertexAttribArray(i));
+			offset += attribute.count * getTypeSize(attribute.type);
+		}
 		return EC::ErrorCode();
 	}
 
@@ -138,13 +149,13 @@ namespace GLUtils {
 	}
 
 	EC::ErrorCode Buffer::bind() const {
-		RETURN_ON_ERROR(glBindBuffer(type, handle));
+		RETURN_ON_GL_ERROR(glBindBuffer(type, handle));
 		return EC::ErrorCode();
 	}
 
 	EC::ErrorCode Buffer::bind(const int bindingIndex) {
-		RETURN_ON_ERROR(bind());
-		RETURN_ON_ERROR(glBindBufferBase(type, bindingIndex, handle));
+		RETURN_ON_GL_ERROR(bind());
+		RETURN_ON_GL_ERROR(glBindBufferBase(type, bindingIndex, handle));
 		return EC::ErrorCode();
 	}
 
@@ -156,7 +167,7 @@ namespace GLUtils {
 	}
 
 	EC::ErrorCode Buffer::unmap() const {
-		RETURN_ON_ERROR(glUnmapBuffer(type));
+		RETURN_ON_GL_ERROR(glUnmapBuffer(type));
 		return EC::ErrorCode();
 	}
 
@@ -181,9 +192,9 @@ namespace GLUtils {
 
 	EC::ErrorCode Shader::loadFromSource(const char* source, ShaderType type) {
 		const GLenum shaderType = convertShaderType(type);
-		RETURN_ON_ERROR(handle = glCreateShader(shaderType););
-		RETURN_ON_ERROR(glShaderSource(handle, 1, &source, nullptr));
-		RETURN_ON_ERROR(glCompileShader(handle));
+		RETURN_ON_GL_ERROR(handle = glCreateShader(shaderType););
+		RETURN_ON_GL_ERROR(glShaderSource(handle, 1, &source, nullptr));
+		RETURN_ON_GL_ERROR(glCompileShader(handle));
 		{
 			const EC::ErrorCode err = checkShaderCompilationError();
 			if (err.hasError()) {
@@ -231,11 +242,11 @@ namespace GLUtils {
 
 	EC::ErrorCode Shader::checkShaderCompilationError() {
 		int success;
-		RETURN_ON_ERROR(glGetShaderiv(handle, GL_COMPILE_STATUS, &success))
+		RETURN_ON_GL_ERROR(glGetShaderiv(handle, GL_COMPILE_STATUS, &success))
 
 			if (!success) {
 				char infoLog[512];
-				RETURN_ON_ERROR(glGetShaderInfoLog(handle, sizeof(infoLog), NULL, infoLog));
+				RETURN_ON_GL_ERROR(glGetShaderInfoLog(handle, sizeof(infoLog), NULL, infoLog));
 				return EC::ErrorCode(-1, "Error in shader code.\n%s", infoLog);
 			}
 		return EC::ErrorCode();
@@ -255,7 +266,7 @@ namespace GLUtils {
 		handle = 0;
 	}
 
-	EC::ErrorCode Program::init(const char* vertexShaderPath, const char* fragmentShaderPath) {
+	EC::ErrorCode Program::initFromFiles(const char* vertexShaderPath, const char* fragmentShaderPath) {
 		Shader vertexShader;
 		EC::ErrorCode err = vertexShader.loadFromFile(vertexShaderPath, GLUtils::ShaderType::Vertex);
 		RETURN_ON_ERROR_CODE(err);
@@ -272,9 +283,9 @@ namespace GLUtils {
 
 			for (int i = 0; i < shaders.size(); ++i) {
 				const unsigned int shaderHandle = shaders[i]->getHandle();
-				RETURN_ON_ERROR(glAttachShader(handle, shaderHandle));
+				RETURN_ON_GL_ERROR(glAttachShader(handle, shaderHandle));
 			}
-		RETURN_ON_ERROR(glLinkProgram(handle));
+		RETURN_ON_GL_ERROR(glLinkProgram(handle));
 		return checkProgramLinkErrors();
 
 		RETURN_ON_ERROR_CODE(err);
@@ -290,16 +301,53 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode Program::init(const Shader& vertexShader, const Shader& fragmentShader) {
-		RETURN_ON_ERROR(handle = glCreateProgram(););
+	EC::ErrorCode Program::initFromShaders(const Shader& vertexShader, const Shader& fragmentShader) {
+		RETURN_ON_GL_ERROR(handle = glCreateProgram(););
 		std::array<const Shader*, 2> shaders = { &vertexShader, &fragmentShader };
 		for (int i = 0; i < shaders.size(); ++i) {
 			const unsigned int shaderHandle = shaders[i]->getHandle();
-			RETURN_ON_ERROR(glAttachShader(handle, shaderHandle));
+			RETURN_ON_GL_ERROR(glAttachShader(handle, shaderHandle));
 		}
-		RETURN_ON_ERROR(glLinkProgram(handle));
+		RETURN_ON_GL_ERROR(glLinkProgram(handle));
 		return checkProgramLinkErrors();
 	}
+
+
+	EC::ErrorCode Program::initFromSources(const char* vertexShaderSource, const char* fragmentShaderSource) {
+		Shader vertexShader;
+		EC::ErrorCode err = vertexShader.loadFromSource(vertexShaderSource, GLUtils::ShaderType::Vertex);
+		RETURN_ON_ERROR_CODE(err);
+
+		Shader fragmentShader;
+		err = fragmentShader.loadFromSource(fragmentShaderSource, GLUtils::ShaderType::Fragment);
+		RETURN_ON_ERROR_CODE(err);
+
+		std::array<Shader*, 2> shaders = { &vertexShader, &fragmentShader };
+
+		handle = glCreateProgram();
+		err = checkGLError();
+		RETURN_ON_ERROR_CODE(err)
+
+			for (int i = 0; i < shaders.size(); ++i) {
+				const unsigned int shaderHandle = shaders[i]->getHandle();
+				RETURN_ON_GL_ERROR(glAttachShader(handle, shaderHandle));
+			}
+		RETURN_ON_GL_ERROR(glLinkProgram(handle));
+		return checkProgramLinkErrors();
+
+		RETURN_ON_ERROR_CODE(err);
+
+		glDetachShader(handle, vertexShader.getHandle());
+		err = checkGLError();
+		RETURN_ON_ERROR_CODE(err);
+
+		glDetachShader(handle, fragmentShader.getHandle());
+		err = checkGLError();
+		RETURN_ON_ERROR_CODE(err);
+
+		return EC::ErrorCode();
+	}
+
 
 	ProgramHandle Program::getHandle() const {
 		return handle;
@@ -350,12 +398,12 @@ namespace GLUtils {
 	}
 
 	EC::ErrorCode VAO::init() {
-		RETURN_ON_ERROR(glGenVertexArrays(1, &handle));
+		RETURN_ON_GL_ERROR(glGenVertexArrays(1, &handle));
 		return EC::ErrorCode();
 	}
 
 	EC::ErrorCode VAO::bind() const {
-		RETURN_ON_ERROR(glBindVertexArray(handle));
+		RETURN_ON_GL_ERROR(glBindVertexArray(handle));
 		return EC::ErrorCode();
 	}
 

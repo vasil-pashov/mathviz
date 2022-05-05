@@ -10,7 +10,7 @@ namespace GLUtils {
 
 	extern EC::ErrorCode checkGLError();
 
-	#define RETURN_ON_ERROR(GLCall) \
+	#define RETURN_ON_GL_ERROR(GLCall) \
 	{ \
 		GLCall; \
 		const EC::ErrorCode err = checkGLError(); \
@@ -26,7 +26,7 @@ namespace GLUtils {
 	/// Wrapper enum for buffer types. Different API have different
 	/// kind of buffer types, but there is some intersection between
 	/// all the types. Currently it will contain only the most common types
-	enum class BufferType : short {
+	enum class BufferType {
 		Vertex,
 		Index,
 		Uniform,
@@ -36,7 +36,7 @@ namespace GLUtils {
 	/// Each buffer vertex is composed of some number of elements
 	/// (in opengl it is [1;4]), they all must be of the same type
 	/// this enum wraps the vertex element type
-	enum class VertexType : short {
+	enum class VertexType {
 		Int,
 		Float
 	};
@@ -48,17 +48,44 @@ namespace GLUtils {
 	};
 
 	/// Each buffer can contain multiple type of vertices, this is the layout of the vertex.
+	// struct AttributeLayout {
+	// 	int64_t offset; ///< Where in the buffer is the first vertex of this type in bytes
+	// 	int stride; ///< The space between two consecutive vertices of this type in bytes
+	// 	int slot; ///< Which slot in the shader is this going to occupy. Corresponds to layout (location=slot) in glsl
+	// 	short componentSize; ///< How much elements does the vertex contain. (In opengl it is in range [1;4]
+	// 	VertexType type; ///< The type of the vertex components. (They are all of the same type)
+	// 	bool normalized;
+	// };
+
 	struct AttributeLayout {
-		int64_t offset; ///< Where in the buffer is the first vertex of this type in bytes
-		int stride; ///< The space between two consecutive vertices of this type in bytes
-		int slot; ///< Which slot in the shader is this going to occupy. Corresponds to layout (location=slot) in glsl
-		short componentSize; ///< How much elements does the vertex contain. (In opengl it is in range [1;4]
-		VertexType type; ///< The type of the vertex components. (They are all of the same type)
+		int count;
+		VertexType type;
+		bool normalized;
+	};
+
+	class BufferLayout {
+	public:
+		BufferLayout() : stride(0) {}
+		BufferLayout(int count) : layout(count), stride(0) {}
+		BufferLayout(const BufferLayout&) = delete;
+		BufferLayout& operator=(const BufferLayout&) = delete;
+		BufferLayout(BufferLayout&&) = delete;
+		BufferLayout& operator=(const BufferLayout&&) = delete;
+		void addAttribute(VertexType type, int count, bool normalized = false);
+		const std::vector<AttributeLayout>& getAttributes() const {
+			return layout;
+		}
+		unsigned int getStride() const {
+			return stride;
+		}
+	private:
+		std::vector<AttributeLayout> layout;
+		unsigned int stride;
 	};
 
 	/// Simple opengl buffer wrapper with ability to upload/free data and set layout for the shader
 	class Buffer {
-		using BufferLayout = std::vector <AttributeLayout>;
+	public:
 		Buffer() = default;
 		~Buffer();
 		Buffer(const Buffer&) = delete;
@@ -72,13 +99,8 @@ namespace GLUtils {
 		/// @param[in] size - Size in bytes of the data to be uploaded
 		/// @param[in] data - Pointer to the data to be uploaded
 		EC::ErrorCode upload(int64_t size, const void* data);
-		/// Binds the current buffer and sets the layout to the buffer
-		template<typename T>
-		EC::ErrorCode setLayout(const T& layout);
-
-		template<typename T, typename ...Args>
-		EC::ErrorCode setLayout(const T& layout, Args &...);
-
+		/// @brief Bind the buffer and set the attribute layout for it.
+		EC::ErrorCode setLayout(const BufferLayout& layout);
 		/// Destroy the handle and free any data uploaded to this buffer
 		void freeMem();
 		/// return the opengl handle to the buffer
@@ -98,7 +120,7 @@ namespace GLUtils {
 	};
 
 	inline EC::ErrorCode Buffer::unbind() const {
-		RETURN_ON_ERROR(glBindBuffer(type, 0));
+		RETURN_ON_GL_ERROR(glBindBuffer(type, 0));
 		return EC::ErrorCode();
 	}
 
@@ -139,6 +161,7 @@ namespace GLUtils {
 
 	/// Class which will link different shaders into one program and hold the handle to it
 	class Program {
+	public:
 		Program() = default;
 		~Program();
 		// Copy semantics
@@ -147,8 +170,9 @@ namespace GLUtils {
 		// Move semantics
 		Program(Program&&) noexcept;
 		Program& operator=(Program&&) = default;
-		EC::ErrorCode init(const char* vertexShaderPath, const char* indexShaderPath);
-		EC::ErrorCode init(const Shader& vertexShader, const Shader& fragmentShader);
+		EC::ErrorCode initFromFiles(const char* vertexShaderPath, const char* indexShaderPath);
+		EC::ErrorCode initFromShaders(const Shader& vertexShader, const Shader& fragmentShader);
+		EC::ErrorCode initFromSources(const char* vertexShaderSrc, const char* fragmentShaderSrc);
 		/// Return the api handle to the program
 		ProgramHandle getHandle() const;
 		/// Set a uniform float mat4
@@ -170,7 +194,7 @@ namespace GLUtils {
 
 	/// VAO is special opengl feature. It "remembers" buffer layout.
 	/// It can also remember which index buffer was bound
-	struct VAO {
+	class VAO {
 	public:
 		VAO() = default;
 		~VAO();
