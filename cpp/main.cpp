@@ -20,7 +20,7 @@ const char* getLineVertexShader() {
 	return
 		"#version 330 core\n"
 		"layout(location = 0) in vec3 position;\n"
-		"layout(location = 1) in vec3 color;\n"
+		"uniform vec3 color;\n"
 		"out vec3 vertexColor;\n"
 		"void main() {\n"
 		"	gl_Position = vec4(position, 1.0f);\n"
@@ -66,8 +66,13 @@ int main() {
 		return err.getStatus();
 	}
 
-	GLUtils::Line l({ 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, 6);
-	err = l.upload();
+	GLUtils::Plot2D plot;
+	err = plot.init([](float x) {return std::sin(x); }, { 1.0f, 0.0f, 0.0f }, -1, 1, 100);
+	if (err.hasError()) {
+		logError(err.getMessage());
+		return err.getStatus();
+	}
+	err = plot.upload();
 	if (err.hasError()) {
 		logError(err.getMessage());
 		return err.getStatus();
@@ -78,9 +83,8 @@ int main() {
 	while (!glfwWindowShouldClose(window)) {
 		/* Render here */
 
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        p.bind();
-        l.draw();
+		plot.draw(p);
+        // l.draw(p);
         // l2.draw();
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
