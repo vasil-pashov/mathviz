@@ -9,25 +9,54 @@ namespace EC {
 }
 
 namespace GLUtils {
+	/// @brief A straight line
 	class Line {
 	public:
 		Line() : start{0.0f, 0.0f, 0.0f}, end{0.0f, 0.0f, 0.0f}, width(0) {}
-		EC::ErrorCode init(const BufferLayout& layout, glm::vec3 start, glm::vec3 end, int width);
+		/// @brief Inititialize the line
+		/// @param layout The layout of each vertex. Used by the shader.
+		/// @param start The start of the line in world space
+		/// @param end The end of the line in world space
+		/// @param width The width of the line in pixel. Fractional values are supported for
+		/// antialiased lines only. In case of fractional value without antialiasing the width
+		/// will be rounded.
+		EC::ErrorCode init(const BufferLayout& layout, glm::vec3 start, glm::vec3 end, float width);
+		/// @brief Upload the geometry to the GPU. Must be called after init.
 		EC::ErrorCode upload();
+		/// @brief Issue a draw call. Must be called only after init and upload are called. 
 		EC::ErrorCode draw();
 	private:
+		/// The start of the line in world space
 		glm::vec3 start;
+		/// The end of the line in world space
 		glm::vec3 end;
 		Buffer vertexBuffer;
 		VAO vao;
-		int width;
+		float width;
 	};
 
+	/// @brief Create a curve following a 2D plot.
+	/// Each x coordinate in world space will corelate to a y coordinate in world space.
 	class Plot2D {
 	public:
 		Plot2D() : from(0), to(0), n(0), width(0) {}
+		/// @brief Initialize the curve
+		/// @tparam FuncT Type of the fuctor which will eval the function. It must accept one float and
+		/// return a float.
+		/// @param layout The layout of the vertex buffer.
+		/// @param f The function which will be plotted.
+		/// @param from The minimal x value of the function in world space.
+		/// @param to The maximal x value of the function in world space.
+		/// @param dx The curve is drawn by connecting linear pieces. The dx value dictates
+		/// the space between two ends of the line (in world space).
+		/// @param width The width of the line in pixel. Fractional values are supported for
+		/// antialiased lines only. In case of fractional value without antialiasing the width
+		/// will be rounded.
 		template<typename FuncT>
-		EC::ErrorCode init(const BufferLayout& layout, FuncT&& f, float from, float to, int n, int width = 1) {
+		EC::ErrorCode init(const BufferLayout& layout, FuncT&& f, float from, float to, float width, int n) {
+			if (from > to) {
+				std::swap(from, to);
+			}
 			this->f = std::forward<FuncT>(f);
 			this->from = from;
 			this->to = to;
@@ -49,9 +78,11 @@ namespace GLUtils {
 		std::function<float(float)> f;
 		Buffer vertexBuffer;
 		VAO vao;
-		int width;
+		float width;
 		float from;
 		float to;
 		int n;
 	};
+
+
 }

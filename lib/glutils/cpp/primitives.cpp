@@ -3,7 +3,7 @@
 #include <array>
 
 namespace GLUtils {
-	EC::ErrorCode Line::init(const BufferLayout& layout, glm::vec3 start, glm::vec3 end, int width = 1) {
+	EC::ErrorCode Line::init(const BufferLayout& layout, glm::vec3 start, glm::vec3 end, float width) {
 		this->start = start;
 		this->end = end;
 		this->width = width;

@@ -69,7 +69,7 @@ int main() {
 	GLUtils::BufferLayout l;
 	l.addAttribute(GLUtils::VertexType::Float, 3);
 	GLUtils::Plot2D plot;
-	err = plot.init(l, [](float x) {return std::sin(x); }, -1, 1, 100);
+	err = plot.init(l, [](float x) {return std::sin(x); }, -1, 1, 1, 100);
 	if (err.hasError()) {
 		logError(err.getMessage());
 		return err.getStatus();
@@ -83,17 +83,13 @@ int main() {
 	glEnable(GL_LINE_SMOOTH);
 
 	while (!glfwWindowShouldClose(window)) {
-		/* Render here */
 		p.bind();
 		p.setUniform("color", { 1.0f, 0.0f, 0.0f });
 		plot.draw();
 		p.unbind();
-        // l.draw(p);
-        // l2.draw();
-		/* Swap front and back buffers */
+
 		glfwSwapBuffers(window);
 
-		/* Poll for and process events */
 		glfwPollEvents();
 	}
 
