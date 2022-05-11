@@ -68,24 +68,16 @@ int main() {
 
 	GLUtils::BufferLayout l;
 	l.addAttribute(GLUtils::VertexType::Float, 3);
-	GLUtils::Plot2D plot;
-	err = plot.init(l, [](float x) {return std::sin(x); }, -1, 1, 1, 100);
-	if (err.hasError()) {
-		logError(err.getMessage());
-		return err.getStatus();
-	}
-	err = plot.upload();
-	if (err.hasError()) {
-		logError(err.getMessage());
-		return err.getStatus();
-	}
+	GLUtils::Rectangle r;
+	err = r.init(l, glm::vec3(-0.5, -0.5, 0), glm::vec3(0.5, 0.5, 0));
+	err = r.upload();
 
 	glEnable(GL_LINE_SMOOTH);
 
 	while (!glfwWindowShouldClose(window)) {
 		p.bind();
 		p.setUniform("color", { 1.0f, 0.0f, 0.0f });
-		plot.draw();
+		err = r.draw();
 		p.unbind();
 
 		glfwSwapBuffers(window);

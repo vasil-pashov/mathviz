@@ -20,11 +20,11 @@ namespace GLUtils {
 		/// @param width The width of the line in pixel. Fractional values are supported for
 		/// antialiased lines only. In case of fractional value without antialiasing the width
 		/// will be rounded.
-		EC::ErrorCode init(const BufferLayout& layout, glm::vec3 start, glm::vec3 end, float width);
+		EC::ErrorCode init(const BufferLayout& layout, const glm::vec3& start, const glm::vec3& end, float width);
 		/// @brief Upload the geometry to the GPU. Must be called after init.
 		EC::ErrorCode upload();
 		/// @brief Issue a draw call. Must be called only after init and upload are called. 
-		EC::ErrorCode draw();
+		EC::ErrorCode draw() const;
 	private:
 		/// The start of the line in world space
 		glm::vec3 start;
@@ -73,7 +73,7 @@ namespace GLUtils {
 			return EC::ErrorCode();
 		}
 		EC::ErrorCode upload();
-		EC::ErrorCode draw();
+		EC::ErrorCode draw() const;
 	private:
 		std::function<float(float)> f;
 		Buffer vertexBuffer;
@@ -84,5 +84,17 @@ namespace GLUtils {
 		int n;
 	};
 
+	class Rectangle {
+	public:
+		Rectangle() : lowLeft{0, 0, 0}, upRight{0, 0, 0} {}
+		EC::ErrorCode init(const BufferLayout& layout, const glm::vec3& lowLeft, const glm::vec3& upRight);
+		EC::ErrorCode upload();
+		EC::ErrorCode draw() const;
+	private:
+		glm::vec3 lowLeft;
+		glm::vec3 upRight;
+		Buffer vertexBuffer;
+		VAO vao;
+	};
 
 }
