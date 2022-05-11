@@ -3,19 +3,16 @@
 #include <array>
 
 namespace GLUtils {
-	EC::ErrorCode Line::init(glm::vec3 start, glm::vec3 end, glm::vec3 color, int width = 1) {
+	EC::ErrorCode Line::init(const BufferLayout& layout, glm::vec3 start, glm::vec3 end, float width) {
 		this->start = start;
 		this->end = end;
-		this->color = color;
 		this->width = width;
-		GLUtils::BufferLayout l;
-		l.addAttribute(GLUtils::VertexType::Float, 3);
 
 		RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
 		RETURN_ON_ERROR_CODE(vao.init());
 		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
-		RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(l));
+		RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
 		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
 		vao.unbind();
 		return EC::ErrorCode();
@@ -32,16 +29,11 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
-	glm::vec3 Line::getColor() const {
-		return color;
-	}
-
-	EC::ErrorCode Line::draw(const Program& p) {
-		p.bind();
-		p.setUniform("color", color);
-		vao.bind();
+	EC::ErrorCode Line::draw() {
+		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_GL_ERROR(glLineWidth(width));
 		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINES, 0, 2));
+		vao.unbind();
 		return EC::ErrorCode();
 	}
 
@@ -60,14 +52,11 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode Plot2D::draw(const Program& p) {
-		p.bind();
-		p.setUniform("color", color);
-		vao.bind();
+	EC::ErrorCode Plot2D::draw() {
+		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_GL_ERROR(glLineWidth(width));
 		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINE_STRIP, 0, n));
 		vao.unbind();
-		p.unbind();
 		return EC::ErrorCode();
 	}
 }

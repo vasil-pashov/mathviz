@@ -9,56 +9,80 @@ namespace EC {
 }
 
 namespace GLUtils {
+	/// @brief A straight line
 	class Line {
 	public:
-		Line() : start{0.0f, 0.0f, 0.0f}, end{0.0f, 0.0f, 0.0f}, color{0.0f, 0.0f, 0.0f}, width(0) {}
-		EC::ErrorCode init(glm::vec3 start, glm::vec3 end, glm::vec3 color, int width);
+		Line() : start{0.0f, 0.0f, 0.0f}, end{0.0f, 0.0f, 0.0f}, width(0) {}
+		/// @brief Inititialize the line
+		/// @param layout The layout of each vertex. Used by the shader.
+		/// @param start The start of the line in world space
+		/// @param end The end of the line in world space
+		/// @param width The width of the line in pixel. Fractional values are supported for
+		/// antialiased lines only. In case of fractional value without antialiasing the width
+		/// will be rounded.
+		EC::ErrorCode init(const BufferLayout& layout, glm::vec3 start, glm::vec3 end, float width);
+		/// @brief Upload the geometry to the GPU. Must be called after init.
 		EC::ErrorCode upload();
-		EC::ErrorCode draw(const Program& p);
-		glm::vec3 getColor() const;
+		/// @brief Issue a draw call. Must be called only after init and upload are called. 
+		EC::ErrorCode draw();
 	private:
+		/// The start of the line in world space
 		glm::vec3 start;
+		/// The end of the line in world space
 		glm::vec3 end;
-		glm::vec3 color;
 		Buffer vertexBuffer;
 		VAO vao;
-		int width;
+		float width;
 	};
 
+	/// @brief Create a curve following a 2D plot.
+	/// Each x coordinate in world space will corelate to a y coordinate in world space.
 	class Plot2D {
 	public:
-		Plot2D() : color{0.0f, 0.0f, 0.0f}, from(0), to(0), n(0), width(0) {}
+		Plot2D() : from(0), to(0), n(0), width(0) {}
+		/// @brief Initialize the curve
+		/// @tparam FuncT Type of the fuctor which will eval the function. It must accept one float and
+		/// return a float.
+		/// @param layout The layout of the vertex buffer.
+		/// @param f The function which will be plotted.
+		/// @param from The minimal x value of the function in world space.
+		/// @param to The maximal x value of the function in world space.
+		/// @param dx The curve is drawn by connecting linear pieces. The dx value dictates
+		/// the space between two ends of the line (in world space).
+		/// @param width The width of the line in pixel. Fractional values are supported for
+		/// antialiased lines only. In case of fractional value without antialiasing the width
+		/// will be rounded.
 		template<typename FuncT>
-		EC::ErrorCode init(FuncT&& f, glm::vec3 color, float from, float to, int n, int width = 1) {
+		EC::ErrorCode init(const BufferLayout& layout, FuncT&& f, float from, float to, float width, int n) {
+			if (from > to) {
+				std::swap(from, to);
+			}
 			this->f = std::forward<FuncT>(f);
-			this->color = color;
 			this->from = from;
 			this->to = to;
 			this->n = n;
 			this->width = width;
 
-			GLUtils::BufferLayout l;
-			l.addAttribute(GLUtils::VertexType::Float, 3);
-
 			RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
 			RETURN_ON_ERROR_CODE(vao.init());
 			RETURN_ON_ERROR_CODE(vao.bind());
 			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
-			RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(l));
+			RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
 			RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
 			vao.unbind();
 			return EC::ErrorCode();
 		}
 		EC::ErrorCode upload();
-		EC::ErrorCode draw(const Program& p);
+		EC::ErrorCode draw();
 	private:
 		std::function<float(float)> f;
-		glm::vec3 color;
 		Buffer vertexBuffer;
 		VAO vao;
-		int width;
+		float width;
 		float from;
 		float to;
 		int n;
 	};
+
+
 }
