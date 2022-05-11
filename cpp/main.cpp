@@ -67,7 +67,7 @@ int main() {
 	}
 
 	GLUtils::Plot2D plot;
-	err = plot.init([](float x) {return std::sin(x); }, { 1.0f, 0.0f, 0.0f }, -1, 1, 100);
+	err = plot.init([](float x) {return std::sin(x); }, -1, 1, 100);
 	if (err.hasError()) {
 		logError(err.getMessage());
 		return err.getStatus();

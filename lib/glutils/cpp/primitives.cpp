@@ -3,10 +3,9 @@
 #include <array>
 
 namespace GLUtils {
-	EC::ErrorCode Line::init(glm::vec3 start, glm::vec3 end, glm::vec3 color, int width = 1) {
+	EC::ErrorCode Line::init(glm::vec3 start, glm::vec3 end, int width = 1) {
 		this->start = start;
 		this->end = end;
-		this->color = color;
 		this->width = width;
 		GLUtils::BufferLayout l;
 		l.addAttribute(GLUtils::VertexType::Float, 3);
@@ -32,13 +31,8 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
-	glm::vec3 Line::getColor() const {
-		return color;
-	}
-
 	EC::ErrorCode Line::draw(const Program& p) {
 		p.bind();
-		p.setUniform("color", color);
 		vao.bind();
 		RETURN_ON_GL_ERROR(glLineWidth(width));
 		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINES, 0, 2));
@@ -62,7 +56,6 @@ namespace GLUtils {
 
 	EC::ErrorCode Plot2D::draw(const Program& p) {
 		p.bind();
-		p.setUniform("color", color);
 		vao.bind();
 		RETURN_ON_GL_ERROR(glLineWidth(width));
 		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINE_STRIP, 0, n));
