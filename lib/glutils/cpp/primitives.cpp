@@ -3,18 +3,16 @@
 #include <array>
 
 namespace GLUtils {
-	EC::ErrorCode Line::init(glm::vec3 start, glm::vec3 end, int width = 1) {
+	EC::ErrorCode Line::init(const BufferLayout& layout, glm::vec3 start, glm::vec3 end, int width = 1) {
 		this->start = start;
 		this->end = end;
 		this->width = width;
-		GLUtils::BufferLayout l;
-		l.addAttribute(GLUtils::VertexType::Float, 3);
 
 		RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
 		RETURN_ON_ERROR_CODE(vao.init());
 		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
-		RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(l));
+		RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
 		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
 		vao.unbind();
 		return EC::ErrorCode();
