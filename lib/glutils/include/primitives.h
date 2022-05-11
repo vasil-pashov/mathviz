@@ -14,7 +14,7 @@ namespace GLUtils {
 		Line() : start{0.0f, 0.0f, 0.0f}, end{0.0f, 0.0f, 0.0f}, width(0) {}
 		EC::ErrorCode init(glm::vec3 start, glm::vec3 end, int width);
 		EC::ErrorCode upload();
-		EC::ErrorCode draw(const Program& p);
+		EC::ErrorCode draw();
 		glm::vec3 getColor() const;
 	private:
 		glm::vec3 start;
@@ -48,7 +48,7 @@ namespace GLUtils {
 			return EC::ErrorCode();
 		}
 		EC::ErrorCode upload();
-		EC::ErrorCode draw(const Program& p);
+		EC::ErrorCode draw();
 	private:
 		std::function<float(float)> f;
 		Buffer vertexBuffer;

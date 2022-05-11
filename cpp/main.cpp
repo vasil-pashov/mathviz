@@ -83,7 +83,7 @@ int main() {
 	while (!glfwWindowShouldClose(window)) {
 		/* Render here */
 
-		plot.draw(p);
+		plot.draw();
         // l.draw(p);
         // l2.draw();
 		/* Swap front and back buffers */

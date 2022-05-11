@@ -31,11 +31,11 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode Line::draw(const Program& p) {
-		p.bind();
-		vao.bind();
+	EC::ErrorCode Line::draw() {
+		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_GL_ERROR(glLineWidth(width));
 		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINES, 0, 2));
+		vao.unbind();
 		return EC::ErrorCode();
 	}
 
@@ -54,13 +54,11 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode Plot2D::draw(const Program& p) {
-		p.bind();
-		vao.bind();
+	EC::ErrorCode Plot2D::draw() {
+		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_GL_ERROR(glLineWidth(width));
 		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINE_STRIP, 0, n));
 		vao.unbind();
-		p.unbind();
 		return EC::ErrorCode();
 	}
 }
