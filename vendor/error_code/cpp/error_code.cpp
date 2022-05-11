@@ -24,6 +24,8 @@ namespace EC {
 	void ErrorCode::makeFormat(const char* format, va_list argptr) {
 		const int defaultSize = 1024;
 		char formated[defaultSize] = { '\0' };
+		// vsprintf returns the size of the formated string. The message string is
+		// always allocated so that it fits exactly vsprintf number of bytes.
 		const int size = vsprintf(formated, format, argptr);
 		if (size > defaultSize) {
 			message.resize(size);
