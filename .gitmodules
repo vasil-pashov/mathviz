@@ -1,0 +1,3 @@
+[submodule "vendor/error-code"]
+	path = vendor/error-code
+	url = https://github.com/vasil-pashov/error-code.git

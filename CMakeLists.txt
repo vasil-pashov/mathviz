@@ -7,7 +7,7 @@ add_subdirectory(lib/glutils)
 
 add_subdirectory(vendor/glm)
 add_subdirectory(vendor/glad)
-add_subdirectory(vendor/error_code)
+add_subdirectory(vendor/error-code)
 
 # Override GLFW build options
 option(GLFW_BUILD_EXAMPLES OFF)
