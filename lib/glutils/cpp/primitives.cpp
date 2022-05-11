@@ -3,7 +3,7 @@
 #include <array>
 
 namespace GLUtils {
-	EC::ErrorCode Line::init(const BufferLayout& layout, glm::vec3 start, glm::vec3 end, float width) {
+	EC::ErrorCode Line::init(const BufferLayout& layout, const glm::vec3& start, const glm::vec3& end, float width) {
 		this->start = start;
 		this->end = end;
 		this->width = width;
@@ -29,7 +29,7 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode Line::draw() {
+	EC::ErrorCode Line::draw() const {
 		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_GL_ERROR(glLineWidth(width));
 		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINES, 0, 2));
@@ -52,10 +52,48 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode Plot2D::draw() {
+	EC::ErrorCode Plot2D::draw() const {
 		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_GL_ERROR(glLineWidth(width));
-		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINE_STRIP, 0, n));
+		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINE_STRIP, 0, n + 1));
+		vao.unbind();
+		return EC::ErrorCode();
+	}
+
+	EC::ErrorCode Rectangle::init(const BufferLayout& layout, const glm::vec3& lowLeft, const glm::vec3& upRight) {
+		this->lowLeft = lowLeft;
+		this->upRight = upRight;
+
+		RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
+		RETURN_ON_ERROR_CODE(vao.init());
+		RETURN_ON_ERROR_CODE(vao.bind());
+		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
+		RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
+		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+
+		return EC::ErrorCode();
+	}
+
+	EC::ErrorCode Rectangle::upload() {
+		// (x1, y1)       (x0, y0)
+		//      ***********
+		//      *         *
+		//      *         *
+		//      ***********
+		// (x2, y2)       (x3, y3)
+		glm::vec3 data[] = {
+			upRight, glm::vec3(lowLeft.x, upRight.y, upRight.z), lowLeft,
+			upRight, lowLeft, glm::vec3(upRight.x, lowLeft.y, upRight.z)
+		};
+		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
+		RETURN_ON_ERROR_CODE(vertexBuffer.upload(sizeof(data), (void*)data));
+		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+		return EC::ErrorCode();
+	}
+
+	EC::ErrorCode Rectangle::draw() const {
+		RETURN_ON_ERROR_CODE(vao.bind());
+		RETURN_ON_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, 6));
 		vao.unbind();
 		return EC::ErrorCode();
 	}
