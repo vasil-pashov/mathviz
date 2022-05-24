@@ -66,10 +66,8 @@ int main() {
 		return err.getStatus();
 	}
 
-	GLUtils::BufferLayout l;
-	l.addAttribute(GLUtils::VertexType::Float, 3);
-	GLUtils::Rectangle r;
-	err = r.init(l, glm::vec3(-0.5, -0.5, 0), glm::vec3(0.5, 0.5, 0));
+	GLUtils::Canvas r;
+	err = r.init(glm::vec3(-0.5, -0.5, 0), glm::vec3(0.5, 0.5, 0));
 	err = r.upload();
 
 	glEnable(GL_LINE_SMOOTH);
