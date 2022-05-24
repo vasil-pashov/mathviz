@@ -3,10 +3,13 @@
 #include <array>
 
 namespace GLUtils {
-	EC::ErrorCode Line::init(const BufferLayout& layout, const glm::vec3& start, const glm::vec3& end, float width) {
+	EC::ErrorCode Line::init(const glm::vec3& start, const glm::vec3& end, float width) {
 		this->start = start;
 		this->end = end;
 		this->width = width;
+
+		GLUtils::BufferLayout layout;
+		layout.addAttribute(GLUtils::VertexType::Float, 3);
 
 		RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
 		RETURN_ON_ERROR_CODE(vao.init());
@@ -60,9 +63,12 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode Rectangle::init(const BufferLayout& layout, const glm::vec3& lowLeft, const glm::vec3& upRight) {
+	EC::ErrorCode Canvas::init(const glm::vec3& lowLeft, const glm::vec3& upRight) {
 		this->lowLeft = lowLeft;
 		this->upRight = upRight;
+
+		GLUtils::BufferLayout layout;
+		layout.addAttribute(GLUtils::VertexType::Float, 3);
 
 		RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
 		RETURN_ON_ERROR_CODE(vao.init());
@@ -74,7 +80,7 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode Rectangle::upload() {
+	EC::ErrorCode Canvas::upload() {
 		// (x1, y1)       (x0, y0)
 		//      ***********
 		//      *         *
@@ -91,7 +97,7 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode Rectangle::draw() const {
+	EC::ErrorCode Canvas::draw() const {
 		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, 6));
 		vao.unbind();
