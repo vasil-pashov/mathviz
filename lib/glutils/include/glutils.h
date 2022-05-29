@@ -303,10 +303,15 @@ namespace GLUtils {
 		);
 
 		[[nodiscard]]
-		EC::ErrorCode bind() const;
+		EC::ErrorCode bind(int unit) const;
 
 		void freeMem();
 	private:
+		/// Some actions do not require setting the texture unit.
+		/// All of those actions however should not be performed
+		/// by the end user.
+		[[nodiscard]]
+		EC::ErrorCode bind() const;
 		unsigned int texture;
 		int width;
 		int height;

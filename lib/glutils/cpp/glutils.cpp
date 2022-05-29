@@ -591,6 +591,12 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
+	EC::ErrorCode Texture2D::bind(int unit) const {
+		RETURN_ON_GL_ERROR(glActiveTexture(GL_TEXTURE + unit));
+		RETURN_ON_GL_ERROR(glBindTexture(GL_TEXTURE_2D, texture));
+		return EC::ErrorCode();
+	}
+
 	EC::ErrorCode Texture2D::bind() const {
 		RETURN_ON_GL_ERROR(glBindTexture(GL_TEXTURE_2D, texture));
 		return EC::ErrorCode();
