@@ -4,9 +4,12 @@
 #include "glad/glad.h" 
 #include "glutils.h"
 #include "error_code.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 namespace GLUtils {
 
+	[[nodiscard]]
 	static const char* getGLErrorString(GLenum err) {
 		switch (err) {
 			case GL_INVALID_ENUM: return "GL_INVALID_ENUM";
@@ -21,6 +24,7 @@ namespace GLUtils {
 		}
 	}
 
+	[[nodiscard]]
 	extern EC::ErrorCode checkGLError() {
 		GLenum err;
 		err = glGetError();
@@ -30,6 +34,7 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
+	[[nodiscard]]
 	inline static GLenum convertBufferType(BufferType type) {
 		switch (type) {
 			case GLUtils::BufferType::Vertex: return GL_ARRAY_BUFFER;
@@ -44,6 +49,7 @@ namespace GLUtils {
 		}
 	}
 
+	[[nodiscard]]
 	inline static GLenum convertVertexType(VertexType type) {
 		switch (type) {
 			case GLUtils::VertexType::Int: return GL_INT;
@@ -56,6 +62,7 @@ namespace GLUtils {
 		}
 	}
 
+	[[nodiscard]]
 	inline static GLenum convertShaderType(ShaderType type) {
 		switch (type) {
 			case GLUtils::ShaderType::Vertex: return GL_VERTEX_SHADER;
@@ -68,6 +75,7 @@ namespace GLUtils {
 		}
 	}
 
+	[[nodiscard]]
 	inline static GLenum convertBufferAccesType(BufferAccessType type) {
 		switch (type) {
 			case GLUtils::BufferAccessType::Read: return GL_READ_ONLY;
@@ -81,6 +89,7 @@ namespace GLUtils {
 		}
 	}
 
+	[[nodiscard]]
 	inline static int getTypeSize(VertexType type) {
 		switch (type) {
 			case GLUtils::VertexType::Int: return 4;
@@ -91,6 +100,70 @@ namespace GLUtils {
 				return 0;
 			}
 		}
+	}
+
+	[[nodiscard]]
+	inline static int convertTexture2DFormat(TextureFormat2D format) {
+		switch (format) {
+			case GLUtils::TextureFormat2D::RGB: return GL_RGB;
+			default: {
+				assert(false && "Unknown image format!");
+				return -1;
+			}
+		}
+	}
+
+	[[nodiscard]]
+	inline static int convertTextureWrap2D(TextureWrap2D wrap) {
+		switch (wrap) {
+			case GLUtils::TextureWrap2D::Repeat: return GL_REPEAT;
+			case GLUtils::TextureWrap2D::Clamp: return GL_CLAMP_TO_EDGE;
+			default:
+			{
+				assert(false && "Unknown texture wrap");
+				return -1;
+			}
+		}
+	}
+
+	[[nodiscard]]
+	inline static int convertTextureFilter2D(TextureFilter2D filter) {
+		switch (filter) {
+			case GLUtils::TextureFilter2D::Nearest: return GL_NEAREST;
+			case GLUtils::TextureFilter2D::Linear: return GL_LINEAR;
+			default:
+			{
+				assert(false, "Unknown texture filter");
+				return -1;
+			}
+		}
+	}
+
+	[[nodiscard]]
+	inline static int convertMipMapFilter(TextureFilter2D minFilter, MipMapFilter2D mipMapFilter) {
+		assert(mipMapFilter != MipMapFilter2D::None);
+		if (minFilter == TextureFilter2D::Nearest) {
+			if (mipMapFilter == MipMapFilter2D::Nearest) {
+				return GL_NEAREST_MIPMAP_NEAREST;
+			} else if(mipMapFilter == MipMapFilter2D::Linear) {
+				return GL_NEAREST_MIPMAP_LINEAR;
+			} else {
+				assert(false && "Unknown MipMapFilter2D option");
+				return -1;
+			}
+		} else if(minFilter == TextureFilter2D::Linear) {
+			assert(minFilter == TextureFilter2D::Linear);
+			if (mipMapFilter == MipMapFilter2D::Nearest) {
+				return GL_LINEAR_MIPMAP_NEAREST;
+			} else if(mipMapFilter == MipMapFilter2D::Linear) {
+				return GL_LINEAR_MIPMAP_LINEAR;
+			} else {
+				assert(false && "Unknown MipMapFilter2D option");
+				return -1;
+			}
+		}
+		assert(false && "Unknown TextureFilter2D min filter option.");
+		return -1;
 	}
 
 	void BufferLayout::addAttribute(VertexType type, int count, bool normalized) {
@@ -414,5 +487,117 @@ namespace GLUtils {
 
 	void VAO::unbind() const {
 		glBindVertexArray(0);
+	}
+
+	// =========================================================
+	// ======================= TEXTURE =========================
+	// =========================================================
+
+	EC::ErrorCode Texture2D::init(
+		const char* path,
+		TextureFormat2D format,
+		TextureWrap2D wrap,
+		TextureFilter2D filter
+	) {
+		std::unique_ptr<unsigned char, decltype(&stbi_image_free)> data(
+			stbi_load(path, &width, &height, &channelsCount, 0),
+			&stbi_image_free
+		);
+		if (data == nullptr) {
+			return EC::ErrorCode("Failed to load texture: %s", path);
+		}
+		if (channelsCount != 3) {
+			return EC::ErrorCode("Unsupported data format. Channels count is: %d", channelsCount);
+		}
+		RETURN_ON_GL_ERROR(glGenTextures(1, &texture));
+		RETURN_ON_ERROR_CODE(bind());
+
+
+		const int texWrap2DGL = convertTextureWrap2D(wrap);
+		RETURN_ON_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texWrap2DGL));
+		RETURN_ON_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, texWrap2DGL));
+
+		const int texFilter2DGL = convertTextureFilter2D(filter);
+		RETURN_ON_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, texFilter2DGL));
+		RETURN_ON_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, texFilter2DGL));
+
+		const int texFormat2DGL = convertTexture2DFormat(format);
+		RETURN_ON_GL_ERROR(glTexImage2D(
+			GL_TEXTURE_2D,
+			0,
+			texFormat2DGL,
+			width,
+			height,
+			0,
+			texFormat2DGL,
+			GL_UNSIGNED_BYTE,
+			data.get()
+		));
+
+		return EC::ErrorCode();
+	}
+
+	EC::ErrorCode Texture2D::init(
+		const char* path,
+		TextureFormat2D format,
+		TextureWrap2D wrapU,
+		TextureWrap2D wrapV,
+		TextureFilter2D minFilter,
+		TextureFilter2D maxFilter,
+		MipMapFilter2D mipMapFilter
+	) {
+		std::unique_ptr<unsigned char, decltype(&stbi_image_free)> data(
+			stbi_load(path, &width, &height, &channelsCount, 0),
+			&stbi_image_free
+		);
+		if (data == nullptr) {
+			return EC::ErrorCode("Failed to load texture: %s", path);
+		}
+		if (channelsCount != 3) {
+			return EC::ErrorCode("Unsupported data format. Channels count is: %d", channelsCount);
+		}
+		RETURN_ON_GL_ERROR(glGenTextures(1, &texture));
+		RETURN_ON_ERROR_CODE(bind());
+
+		const int uTexWrap2DGL = convertTextureWrap2D(wrapU);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, uTexWrap2DGL);
+
+		const int vTexWrap2DGL = convertTextureWrap2D(wrapV);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, vTexWrap2DGL);
+
+		const int minFilter2DGL = mipMapFilter != MipMapFilter2D::None ?
+			convertMipMapFilter(minFilter, mipMapFilter) :
+			convertTextureFilter2D(minFilter);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter2DGL);
+
+		const int maxFilter2DGL = convertTextureFilter2D(maxFilter);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, maxFilter2DGL);
+
+		const int glTextureFormat = convertTexture2DFormat(format);
+		RETURN_ON_GL_ERROR(glTexImage2D(
+			GL_TEXTURE_2D,
+			0,
+			glTextureFormat,
+			width,
+			height,
+			0,
+			glTextureFormat,
+			GL_UNSIGNED_BYTE,
+			data.get()
+		));
+		if (mipMapFilter != MipMapFilter2D::None) {
+			RETURN_ON_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
+		}
+		return EC::ErrorCode();
+	}
+
+	EC::ErrorCode Texture2D::bind() const {
+		RETURN_ON_GL_ERROR(glBindTexture(GL_TEXTURE_2D, texture));
+		return EC::ErrorCode();
+	}
+
+	void Texture2D::freeMem() {
+		glDeleteTextures(1, &texture);
+		assert(checkGLError().hasError() == false);
 	}
 }

@@ -215,4 +215,101 @@ namespace GLUtils {
 	private:
 		unsigned int handle;
 	};
+
+	/// Defines what happens when texture coordinates go out of range [0;1]
+	enum class TextureWrap2D {
+		/// The texture starts repeating
+		Repeat,
+		/// Clamps all coordinates to [0;1] range. Thus coordinates higher than
+		/// one will be sampled at 1, coords lower that 0 will be sampled at 0.
+		Clamp,
+	};
+
+
+	/// Defines how the image will be sampled in cases where one screen coordinate
+	/// (pixel) does not match to one image coordinate (texel).
+	enum class TextureFilter2D {
+		/// Selects the texel whose center is closest to the texture coordinate
+		Nearest,
+		/// takes an interpolated value from the texture coordinate's neighboring texels,
+		/// approximating a color between the texels. The smaller the distance from the texture
+		/// coordinate to a texel's center, the more that texel's color contributes to the sampled color
+		Linear
+	};
+
+	/// Defines which mipmap layer to use
+	enum class MipMapFilter2D {
+		/// No mipmaps will be created
+		None,
+		/// When between two mipmaps sample the one that is closest
+		Nearest,
+		/// When between two mipmaps interpolate between both. The one
+		/// which is closer will have more influence on the result.
+		Linear
+	};
+
+	enum class TextureFormat2D {
+		RGB
+	};
+
+	class Texture2D {
+	public:
+		Texture2D() : width(0), height(0), texture(0), channelsCount(0) {}
+
+		~Texture2D() {
+			freeMem();
+		}
+
+		/// Load texture from disk into video memory
+		/// @param[in] path The path to the texture file
+		/// @param[in] format Describes the image file contents e.g. the type of the channels
+		/// (red/green/blue, red/green/blue/alpha, etc.) the count of the channels etc... The
+		/// format of the created image will be mapped as close as possible to the original format.
+		/// @param[in] wrap Defines what will happen when texture coordinate go out of range [0;1]
+		/// in both u and v directions. The same option will be applied for both u and v.
+		/// @param[in] Defines how the image will be sampled in cases where one screen coordinate
+		/// (pixel) does not match to one image coordinate (texel).
+		[[nodiscard]]
+		EC::ErrorCode init(
+			const char* path,
+			TextureFormat2D format,
+			TextureWrap2D wrap,
+			TextureFilter2D filter
+		);
+
+		/// Load texture from disk into video memory
+		/// @param[in] path The path to the texture file
+		/// @param[in] format Describes the image file contents e.g. the type of the channels
+		/// (red/green/blue, red/green/blue/alpha, etc.) the count of the channels etc... The
+		/// format of the created image will be mapped as close as possible to the original format.
+		/// @param[in] wrapU Defines what will happen when texture coordinate go out of range [0;1]
+		/// in the u (horizontal) direction
+		/// @param[in] wrapV Defines what will happen when texture coordinate go out of range [0;1]
+		/// in the v (vertical) direction
+		/// @param[in] minFilter Defines how the image will be sampled in cases where one screen coordinate
+		/// (pixel) does not match to one image coordinate (texel) and one texel corresponds to less than a pixel.
+		/// @param[in] minFilter Defines how the image will be sampled in cases where one screen coordinate
+		/// (pixel) does not match to one image coordinate (texel) and one texel corresponds to multiple pixels
+		/// @param[in] mipMapFilter Defines whether to use mipmaps and how to choose which mipmap to sample
+		[[nodiscard]]
+		EC::ErrorCode init(
+			const char* path,
+			TextureFormat2D format,
+			TextureWrap2D wrapU,
+			TextureWrap2D wrapV,
+			TextureFilter2D minFilter,
+			TextureFilter2D maxFilter,
+			MipMapFilter2D mipMapFilter
+		);
+
+		[[nodiscard]]
+		EC::ErrorCode bind() const;
+
+		void freeMem();
+	private:
+		unsigned int texture;
+		int width;
+		int height;
+		int channelsCount;
+	};
 }
