@@ -144,6 +144,11 @@ namespace GLUtils {
 		Shader(Shader&&) noexcept;
 		Shader& operator=(Shader&&) noexcept;
 		/// Create the shader given the source code
+		/// @param[in] source Source code for the shader
+		/// @param[in] length The length of the shader (in characters) 
+		/// @param[in] type Type of the shader e.g. vertex, fragment, etc...
+		EC::ErrorCode loadFromSource(const char* source, int length, ShaderType type);
+		/// Create the shader given the source code
 		/// @param[in] source - Source code for the shader
 		/// @param[in] type - Type of the shader e.g. vertex, fragment, etc...
 		EC::ErrorCode loadFromSource(const char* source, ShaderType type);
@@ -170,6 +175,7 @@ namespace GLUtils {
 		// Move semantics
 		Program(Program&&) noexcept;
 		Program& operator=(Program&&) = default;
+		EC::ErrorCode initFromMegaShader(const char* path);
 		EC::ErrorCode initFromFiles(const char* vertexShaderPath, const char* indexShaderPath);
 		EC::ErrorCode initFromShaders(const Shader& vertexShader, const Shader& fragmentShader);
 		EC::ErrorCode initFromSources(const char* vertexShaderSrc, const char* fragmentShaderSrc);

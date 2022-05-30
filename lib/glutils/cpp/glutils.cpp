@@ -277,6 +277,21 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
+	EC::ErrorCode Shader::loadFromSource(const char* source, const int length, ShaderType type) {
+		const GLenum shaderType = convertShaderType(type);
+		RETURN_ON_GL_ERROR(handle = glCreateShader(shaderType););
+		RETURN_ON_GL_ERROR(glShaderSource(handle, 1, &source, &length));
+		RETURN_ON_GL_ERROR(glCompileShader(handle));
+		{
+			const EC::ErrorCode err = checkShaderCompilationError();
+			if (err.hasError()) {
+				return err;
+			}
+		}
+		return EC::ErrorCode();
+	}
+
+
 	EC::ErrorCode Shader::loadFromFile(const char* path, ShaderType type) {
 		std::unique_ptr <FILE, decltype(&fclose)> file(fopen(path, "rb"), &fclose);
 		if (file == nullptr) {
@@ -421,6 +436,64 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
+	EC::ErrorCode Program::initFromMegaShader(const char* path) {
+		std::unique_ptr<FILE, decltype(&fclose)> shaderFile(fopen(path, "rb"), &fclose);
+		if (shaderFile == nullptr) {
+			return EC::ErrorCode(errno, "Cannot open file %s path: %s", path, strerror(errno));
+		}
+		fseek(shaderFile.get(), 0L, SEEK_END);
+		const int64_t size = ftell(shaderFile.get());
+		rewind(shaderFile.get());
+		std::string joinedShader;
+		joinedShader.resize(size);
+		fread(joinedShader.data(), 1, size, shaderFile.get());
+
+		std::array<Shader, 2> shaders;
+		std::array<bool, 2> isInitialized;
+		// The internal convention is that when we have many shaders in a single file
+		// each shader will start with the line #shader <type_of_shader>
+		// After <type_of_shader> there must be a new line.
+		int currentPos = joinedShader.find_first_of("#shader", 0);
+		while (currentPos < joinedShader.size()) {
+			while (std::isblank(joinedShader[currentPos])) {
+				currentPos++;
+			}
+			// The #shader <shader_type> must end with a newline by convention
+			const int shaderStart = joinedShader.find("\n", currentPos, 1) + 1;
+			const int nextShaderStart = joinedShader.find("#shader", shaderStart, sizeof("#shader")-1);
+			const int shaderEnd = nextShaderStart == std::string::npos ? size : nextShaderStart;
+			const int shaderSize = shaderEnd - shaderStart;
+			const char* shaderDirective = joinedShader.c_str() + currentPos + sizeof("#shader");
+			ShaderType shaderType;
+			if (std::strncmp("fragment", shaderDirective, sizeof("fragment") - 1) == 0) {
+				shaderType = ShaderType::Fragment;
+			} else if (std::strncmp("vertex", shaderDirective, sizeof("vertex") - 1) == 0) {
+				shaderType = ShaderType::Vertex;
+			} else {
+				const int shaderTypeLen = joinedShader.find('\n', shaderStart) - currentPos;
+				const std::string shaderType = joinedShader.substr(currentPos, shaderTypeLen);
+				return EC::ErrorCode("Unknown shader type: %s", shaderType.c_str());
+			}
+			isInitialized[static_cast<int>(shaderType)] = true;
+			RETURN_ON_ERROR_CODE(shaders[static_cast<int>(shaderType)].loadFromSource(
+				joinedShader.c_str() + shaderStart,
+				shaderSize,
+				shaderType)
+			);
+
+			currentPos = shaderEnd;
+		}
+		for (int i = 0; i < isInitialized.size(); ++i) {
+			if (isInitialized[i] == false) {
+				return EC::ErrorCode("Not all required shaders are initialized.");
+			}
+		}
+		RETURN_ON_ERROR_CODE(initFromShaders(
+			shaders[static_cast<int>(ShaderType::Vertex)],
+			shaders[static_cast<int>(ShaderType::Fragment)])
+		);
+		return EC::ErrorCode();
+	}
 
 	ProgramHandle Program::getHandle() const {
 		return handle;
@@ -592,7 +665,7 @@ namespace GLUtils {
 	}
 
 	EC::ErrorCode Texture2D::bind(int unit) const {
-		RETURN_ON_GL_ERROR(glActiveTexture(GL_TEXTURE + unit));
+		RETURN_ON_GL_ERROR(glActiveTexture(GL_TEXTURE0 + unit));
 		RETURN_ON_GL_ERROR(glBindTexture(GL_TEXTURE_2D, texture));
 		return EC::ErrorCode();
 	}
@@ -604,6 +677,8 @@ namespace GLUtils {
 
 	void Texture2D::freeMem() {
 		glDeleteTextures(1, &texture);
-		assert(checkGLError().hasError() == false);
+		const EC::ErrorCode err = checkGLError();
+		assert(err.hasError() == false);
+		texture = 0;
 	}
 }
