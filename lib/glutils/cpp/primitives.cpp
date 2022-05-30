@@ -69,6 +69,7 @@ namespace GLUtils {
 
 		GLUtils::BufferLayout layout;
 		layout.addAttribute(GLUtils::VertexType::Float, 3);
+		layout.addAttribute(GLUtils::VertexType::Float, 2);
 
 		RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
 		RETURN_ON_ERROR_CODE(vao.init());
@@ -82,14 +83,23 @@ namespace GLUtils {
 
 	EC::ErrorCode Canvas::upload() {
 		// (x1, y1)       (x0, y0)
+		// (0, 1)         (1, 1)
 		//      ***********
 		//      *         *
 		//      *         *
 		//      ***********
 		// (x2, y2)       (x3, y3)
-		glm::vec3 data[] = {
-			upRight, glm::vec3(lowLeft.x, upRight.y, upRight.z), lowLeft,
-			upRight, lowLeft, glm::vec3(upRight.x, lowLeft.y, upRight.z)
+		// (0, 0)         (1, 0)
+		const glm::vec3 upLeft(lowLeft.x, upRight.y, upRight.z);
+		const glm::vec3 lowRight(upRight.x, lowLeft.y, upRight.z);
+		const float data[] = {
+			upRight.x, upRight.y, upRight.z, 1, 1,
+			upLeft.x, upLeft.y, upLeft.z, 0, 1,
+			lowLeft.x, lowLeft.y, lowLeft.z, 0, 0,
+
+			upRight.x, upRight.y, upRight.z, 1, 1,
+			lowLeft.x, lowLeft.y, lowLeft.z, 0, 0,
+			lowRight.x, lowRight.y, lowRight.z, 1, 0
 		};
 		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
 		RETURN_ON_ERROR_CODE(vertexBuffer.upload(sizeof(data), (void*)data));

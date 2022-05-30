@@ -15,6 +15,6 @@ SET(CPP
 SET(SRC ${HEADERS} ${CPP})
 
 add_library(${PROJECT_NAME} STATIC ${SRC})
-target_link_libraries(${PROJECT_NAME} PUBLIC glm glad error_code)
+target_link_libraries(${PROJECT_NAME} PUBLIC glm glad error_code stb)
 
 target_include_directories(${PROJECT_NAME} PUBLIC include)
