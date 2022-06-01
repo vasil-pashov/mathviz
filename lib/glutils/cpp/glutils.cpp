@@ -177,6 +177,16 @@ namespace GLUtils {
 		other.handle = 0;
 	}
 
+	Buffer& Buffer::operator=(Buffer&& other) noexcept {
+		assert(&other != this);
+		freeMem();
+		handle = other.handle;
+		type = other.type;
+		other.handle = 0;
+		return *this;
+	}
+
+
 	Buffer::~Buffer() {
 		freeMem();
 	}
@@ -511,6 +521,12 @@ namespace GLUtils {
 		return GLUtils::checkGLError();
 	}
 
+	EC::ErrorCode Program::setUniform(const char* name, float value) const {
+		const int location = glGetUniformLocation(handle, name);
+		glUniform1f(location, value);
+		return GLUtils::checkGLError();
+	}
+
 	EC::ErrorCode Program::bind() const {
 		glUseProgram(handle);
 		return checkGLError();
@@ -543,23 +559,33 @@ namespace GLUtils {
 		other.handle = 0;
 	}
 
+	VAO& VAO::operator=(VAO&& other) noexcept {
+		freeMem();
+		handle = other.handle;
+		other.handle = 0;
+		return *this;
+	}
+
+	[[nodiscard]]
 	EC::ErrorCode VAO::init() {
 		RETURN_ON_GL_ERROR(glGenVertexArrays(1, &handle));
 		return EC::ErrorCode();
 	}
 
+	[[nodiscard]]
 	EC::ErrorCode VAO::bind() const {
 		RETURN_ON_GL_ERROR(glBindVertexArray(handle));
 		return EC::ErrorCode();
 	}
 
 	void VAO::freeMem() {
-		unbind();
 		glDeleteVertexArrays(1, &handle);
 	}
 
-	void VAO::unbind() const {
-		glBindVertexArray(0);
+	[[nodiscard]]
+	EC::ErrorCode VAO::unbind() const {
+		RETURN_ON_GL_ERROR(glBindVertexArray(0));
+		return EC::ErrorCode();
 	}
 
 	// =========================================================

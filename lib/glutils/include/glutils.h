@@ -91,7 +91,7 @@ namespace GLUtils {
 		Buffer(const Buffer&) = delete;
 		Buffer(Buffer&&) noexcept;
 		Buffer& operator=(const Buffer&) = delete;
-		Buffer& operator=(Buffer&&) = delete;
+		Buffer& operator=(Buffer&&) noexcept;;
 		/// Initialize the handle to the buffer. Does not allocate GPU memory
 		/// @param[in] type - Type of the buffer e.g. vertex, index, etc...
 		EC::ErrorCode init(BufferType type);
@@ -190,6 +190,7 @@ namespace GLUtils {
 		/// @param[in] name - Name of the uniform must match a uniform in the shaders
 		/// @param[in] float - pointer to the first element of the matrix
 		EC::ErrorCode setUniform(const char* name, const glm::vec3& vector) const;
+		EC::ErrorCode setUniform(const char* name, float value) const;
 		EC::ErrorCode bind() const;
 		void unbind() const;
 	private:
@@ -209,13 +210,13 @@ namespace GLUtils {
 		VAO& operator=(const VAO&) = delete;
 		// Move semantics
 		VAO(VAO&&) noexcept;
-		VAO& operator=(VAO&&) = delete;
+		VAO& operator=(VAO&&) noexcept;
 		/// Init the VAO handle
 		EC::ErrorCode init();
 		/// Bind the VAO, when bound the vao starts recording buffer layouts and index buffers
 		EC::ErrorCode bind() const;
 		/// Unbinds the current VAO by binding the default vao which is 0
-		void unbind() const;
+		EC::ErrorCode unbind() const;
 		/// unbind and delete the vao
 		void freeMem();
 	private:
