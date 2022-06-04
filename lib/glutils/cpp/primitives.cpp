@@ -58,7 +58,7 @@ namespace GLUtils {
 	EC::ErrorCode Plot2D::draw() const {
 		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_GL_ERROR(glLineWidth(width));
-		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINE_STRIP, 0, n + 1));
+		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINE_STRIP, 0, n));
 		vao.unbind();
 		return EC::ErrorCode();
 	}

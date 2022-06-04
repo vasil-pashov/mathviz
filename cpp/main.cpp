@@ -60,22 +60,32 @@ int main() {
 	}
 
 	GLUtils::Program p;
-	EC::ErrorCode err = p.initFromSources(getLineVertexShader(), getLineFragmentShader());
+	EC::ErrorCode err = p.initFromMegaShader("D:\\Programming\\c++\\glutils\\assets\\shaders\\line_morph.glsl");
 	if (err.hasError()) {
 		logError(err.getMessage());
 		return err.getStatus();
 	}
 
-	GLUtils::Canvas r;
-	err = r.init(glm::vec3(-0.5, -0.5, 0), glm::vec3(0.5, 0.5, 0));
-	err = r.upload();
+	GLUtils::Plot2D plot;
+	plot.init([](const float x) -> float {return std::sin(x); }, -1.0f, 1.0f, 2, 100);
+	plot.upload();
 
+	GLUtils::Circle c(100, 0.25);
+	GLUtils::Rectangle rect(glm::vec3(-0.5, -0.5, 1.0f), glm::vec3(0.5f, 0.5f, 1.0f));
+	GLUtils::Morph2D morph;
+	morph.init(rect, c);
+	//morph.init(c, rect);
 	glEnable(GL_LINE_SMOOTH);
 
 	while (!glfwWindowShouldClose(window)) {
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
 		p.bind();
-		p.setUniform("color", { 1.0f, 0.0f, 0.0f });
-		err = r.draw();
+		// printf("%f\n", glfwGetTime());
+		const float lerpCoeff = std::min(glfwGetTime() / 5.0, 1.0);
+		err = p.setUniform("lerpCoeff", lerpCoeff);
+		assert(err.hasError() == false);
+		err = morph.draw();
 		p.unbind();
 
 		glfwSwapBuffers(window);

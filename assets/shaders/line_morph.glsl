@@ -5,7 +5,7 @@ layout(location = 1) in vec3 endPos;
 uniform float lerpCoeff;
 void main() {
 	vec3 mixedPos = mix(startPos, endPos, lerpCoeff);
-	gl_Position = vec4(mixedPos, 1.0);
+	gl_Position = vec4(mixedPos, 1.0f);
 }
 
 #shader fragment

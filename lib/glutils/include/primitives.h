@@ -128,36 +128,41 @@ namespace GLUtils {
 
 		EC::ErrorCode init(const Morphable2D& start, const Morphable2D& end) {
 			vertexCount = std::max(start.getVertexCount(), end.getVertexCount());
-			std::vector<glm::vec3> buffer(vertexCount * 2);
-			const bool startHasMoreVerts = start.getVertexCount() > end.getVertexCount();
-			for (int i = 0; i < vertexCount; ++i) {
-				const int bufferIndex = 2 * i;
-				if (startHasMoreVerts) {
-					const glm::vec3& startPos = start.getVertices()[i];
-					buffer[bufferIndex] = startPos;
-					buffer[bufferIndex + 1] = end.getClosestVertex(startPos);
+			std::vector<glm::vec3> data(vertexCount * 2);
+			const int startVerts = start.getVertexCount();
+			const int endVerts = end.getVertexCount();
+			for (int i = 0, idx = 0; i < vertexCount; ++i, idx += 2) {
+				if (startVerts > endVerts) {
+					const glm::vec3& s = start.getVertices()[i];
+					data[idx] = s;
+					data[idx + 1] = end.getClosestVertex(s);
+				} else if (endVerts > startVerts) {
+					const glm::vec3& currentVert = end.getVertices()[i];
+					data[idx] = start.getClosestVertex(currentVert);
+					data[idx + 1] = currentVert;
 				} else {
-					const glm::vec3 endPos = end.getVertices()[i];
-					buffer[bufferIndex] = start.getClosestVertex(endPos);
-					buffer[bufferIndex + 1] = endPos;
+					data[idx] = start.getVertices()[i];
+					data[idx + 1] = end.getVertices()[i];
 				}
 			}
 
-			BufferLayout layout;
-			// Start position
-			layout.addAttribute(VertexType::Float, 3);
-			// End position
-			layout.addAttribute(VertexType::Float, 3);
 
-			RETURN_ON_ERROR_CODE(vertexBuffer.init(BufferType::Vertex));
-			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
+			GLUtils::BufferLayout layout;
+			layout.addAttribute(GLUtils::VertexType::Float, 3);
+			layout.addAttribute(GLUtils::VertexType::Float, 3);
+
+			RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
 			RETURN_ON_ERROR_CODE(vao.init());
 			RETURN_ON_ERROR_CODE(vao.bind());
+			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
 			RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
-			const int64_t bufferByteSize = buffer.size() * sizeof(glm::vec3);
-			RETURN_ON_ERROR_CODE(vertexBuffer.upload(bufferByteSize, buffer.data()));
-			RETURN_ON_ERROR_CODE(vao.unbind());
 			RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+			vao.unbind();
+			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
+			const int64_t dataByteSize = data.size() * sizeof(glm::vec3);
+			RETURN_ON_ERROR_CODE(vertexBuffer.upload(dataByteSize, (void*)data.data()));
+			RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+
 			return EC::ErrorCode();
 		}
 
@@ -181,14 +186,14 @@ namespace GLUtils {
 
 	class Circle : public Morphable2D {
 	public:
-		Circle(int numVerts) : vertices(numVerts) {
-			// default radius is 1
-			// default center is (0, 0, 0)
+		Circle(int numVerts, float radius) : vertices(numVerts + 1), radius(radius) {
 			const float dt = 2 * PI / numVerts;
-			for (int i = 0, t = 0; i < numVerts; ++i, t+=dt) {
-				vertices[i] = glm::vec3(std::cos(t), std::sin(t), 0);
+			float t = 0;
+			for (int i = 0; i < numVerts; ++i) {
+				vertices[i] = glm::vec3(radius * std::cos(t), radius * std::sin(t), 1);
 				t += dt;
 			}
+			vertices[numVerts] = vertices[0];
 		}
 		int getVertexCount() const override {
 			return vertices.size();
@@ -212,6 +217,7 @@ namespace GLUtils {
 		}
 	private:
 		std::vector<glm::vec3> vertices;
+		float radius;
 	};
 
 	class Rectangle : public Morphable2D {
