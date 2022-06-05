@@ -12,13 +12,13 @@
 { \
 	const EC::ErrorCode& err = _Err; \
 	if(err.hasError()) { \
-		logError(err.getMessage()); \
+		logError(err.getMessage(), __LINE__); \
 		std::exit(err.getStatus()); \
 	} \
 }
 
-void logError(const char* error) {
-	printf("[Error] %s\n", error);
+void logError(const char* error, int line) {
+	printf("[Error] %d %s\n", line, error);
 }
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
@@ -52,11 +52,12 @@ int main() {
 	
 	GLFWwindow* window;
 	EXIT_ON_ERROR_CODE(initOpenGL(&window));
-	GLUtils::Program p;
-	EXIT_ON_ERROR_CODE(p.initFromMegaShader("D:\\Programming\\c++\\glutils\\assets\\shaders\\line_morph.glsl"));
+	GLUtils::Program morphProgram, plotProgram;
+	EXIT_ON_ERROR_CODE(morphProgram.initFromMegaShader("D:\\Programming\\c++\\glutils\\assets\\shaders\\line_morph.glsl"));
+	EXIT_ON_ERROR_CODE(plotProgram.initFromMegaShader("D:\\Programming\\c++\\glutils\\assets\\shaders\\line.glsl"));
 
 	GLUtils::Plot2D plot;
-	plot.init([](const float x) -> float {return std::sin(x); }, -1.0f, 1.0f, 2, 100);
+	plot.init([](const float x) -> float {return std::sin(x); }, -10.0f, 10.0f, 2, 100);
 	plot.upload();
 
 	GLUtils::Circle c(100, 5);
@@ -74,17 +75,28 @@ int main() {
 	const glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
 	const glm::mat4 view = glm::lookAt(cameraPos, lookAtPoint, cameraUp);
 
+
+
+
+
 	while (!glfwWindowShouldClose(window)) {
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-		p.bind();
-		p.setUniform("projection", ortho, false);
-		p.setUniform("view", view, false);
+		/*morphProgram.bind();
+		morphProgram.setUniform("projection", ortho, false);
+		morphProgram.setUniform("view", view, false);
 		// printf("%f\n", glfwGetTime());
 		const float lerpCoeff = std::min(glfwGetTime() / 1, 1.0);
-		EXIT_ON_ERROR_CODE(p.setUniform("lerpCoeff", lerpCoeff));
+		EXIT_ON_ERROR_CODE(morphProgram.setUniform("lerpCoeff", lerpCoeff));
 		EXIT_ON_ERROR_CODE(morph.draw());
-		p.unbind();
+		morphProgram.unbind();*/
+
+		EXIT_ON_ERROR_CODE(plotProgram.bind());
+		EXIT_ON_ERROR_CODE(morphProgram.setUniform("projection", ortho, false));
+		EXIT_ON_ERROR_CODE(morphProgram.setUniform("view", view, false));
+		EXIT_ON_ERROR_CODE(plotProgram.setUniform("color", glm::vec3(0.5f, 0.5f, 0.f)));
+		EXIT_ON_ERROR_CODE(plot.draw());
+		plotProgram.unbind();
 
 		glfwSwapBuffers(window);
 

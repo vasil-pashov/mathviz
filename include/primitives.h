@@ -68,25 +68,37 @@ namespace GLUtils {
 			GLUtils::BufferLayout layout;
 			layout.addAttribute(GLUtils::VertexType::Float, 3);
 
-			RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
-			RETURN_ON_ERROR_CODE(vao.init());
-			RETURN_ON_ERROR_CODE(vao.bind());
-			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
-			RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
-			RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
-			vao.unbind();
+			RETURN_ON_ERROR_CODE(plotVertexBuffer.init(GLUtils::BufferType::Vertex));
+			RETURN_ON_ERROR_CODE(plotVAO.init());
+			RETURN_ON_ERROR_CODE(plotVAO.bind());
+			RETURN_ON_ERROR_CODE(plotVertexBuffer.bind());
+			RETURN_ON_ERROR_CODE(plotVertexBuffer.setLayout(layout));
+			RETURN_ON_ERROR_CODE(plotVertexBuffer.unbind());
+			RETURN_ON_ERROR_CODE(plotVAO.unbind());
+
+			RETURN_ON_ERROR_CODE(axisVertexBuffer.init(GLUtils::BufferType::Vertex));
+			RETURN_ON_ERROR_CODE(axisVAO.init());
+			RETURN_ON_ERROR_CODE(axisVAO.bind());
+			RETURN_ON_ERROR_CODE(axisVertexBuffer.bind());
+			RETURN_ON_ERROR_CODE(axisVertexBuffer.setLayout(layout));
+			RETURN_ON_ERROR_CODE(axisVertexBuffer.unbind());
+			RETURN_ON_ERROR_CODE(axisVAO.unbind());
+
 			return EC::ErrorCode();
 		}
 		EC::ErrorCode upload();
 		EC::ErrorCode draw() const;
 	private:
 		std::function<float(float)> f;
-		Buffer vertexBuffer;
-		VAO vao;
+		Buffer plotVertexBuffer;
+		Buffer axisVertexBuffer;
+		VAO plotVAO;
+		VAO axisVAO;
 		float width;
 		float from;
 		float to;
 		int n;
+		int axisLines;
 	};
 
 	class Canvas {

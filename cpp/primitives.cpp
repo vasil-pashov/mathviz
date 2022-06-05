@@ -41,25 +41,68 @@ namespace GLUtils {
 	}
 
 	EC::ErrorCode Plot2D::upload() {
-		RETURN_ON_ERROR_CODE(vertexBuffer.upload(sizeof(glm::vec3) * n, nullptr));
+		RETURN_ON_ERROR_CODE(plotVertexBuffer.upload(sizeof(glm::vec3) * n, nullptr));
 		void* mapped;
-		RETURN_ON_ERROR_CODE(vertexBuffer.map(mapped, BufferAccessType::Write));
+		RETURN_ON_ERROR_CODE(plotVertexBuffer.map(mapped, BufferAccessType::Write));
 		
+		float maxHeight = f(from);
+		float minHeight = maxHeight;
 		const float dh = (to - from) / (n-1);
 		for (int i = 0; i < n; ++i) {
-			const glm::vec3 point(from + i * dh, f(from + i * dh), 0.0f);
+			const float y = f(from + i * dh);
+			maxHeight = std::max(maxHeight, y);
+			minHeight = std::min(minHeight, y);
+			const glm::vec3 point(from + i * dh, y, 0.0f);
 			static_cast<glm::vec3*>(mapped)[i] = point;
 		}
-		RETURN_ON_ERROR_CODE(vertexBuffer.unmap());
-		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+		RETURN_ON_ERROR_CODE(plotVertexBuffer.unmap());
+		RETURN_ON_ERROR_CODE(plotVertexBuffer.unbind());
+
+		const float axisLineDh = 1;
+		axisLines = 4;
+		const int horizontalLines = std::ceil((to - from) / axisLineDh) + 1;
+		axisLines += 2 * horizontalLines;
+		const int vertixalLines = std::ceil((maxHeight - minHeight) / axisLineDh) + 1;
+		axisLines += 2 * vertixalLines;
+		std::vector<glm::vec3> axis(axisLines);
+		int i = 0;
+		axis[i++] = glm::vec3(from, 0.0f, 0.0f);
+		axis[i++] = glm::vec3(to, 0.f, 0.0f);
+
+		axis[i++] = glm::vec3(0.f, minHeight, 0.0f);
+		axis[i++] = glm::vec3(0.f, maxHeight, 0.0f);
+
+		const float axilsLineHalfLength = 0.1;
+
+		for (int horizontalLine = 0; horizontalLine < horizontalLines; ++horizontalLine) {
+			const float x = from + horizontalLine * axisLineDh;
+			axis[i++] = glm::vec3(x, -axilsLineHalfLength, 0.0f);
+			axis[i++] = glm::vec3(x, axilsLineHalfLength, 0.0f);
+		}
+
+		for (float verticalLine = 0; verticalLine < vertixalLines; ++verticalLine) {
+			const float y = minHeight + verticalLine * axisLineDh;
+			axis[i++] = glm::vec3(-axilsLineHalfLength, y, 0.0f);
+			axis[i++] = glm::vec3(axilsLineHalfLength, y, 0.0f);
+		}
+
+		RETURN_ON_ERROR_CODE(axisVertexBuffer.upload(sizeof(glm::vec3) * axis.size(), axis.data()));
+		RETURN_ON_ERROR_CODE(axisVertexBuffer.unbind());
+
 		return EC::ErrorCode();
 	}
 
 	EC::ErrorCode Plot2D::draw() const {
-		RETURN_ON_ERROR_CODE(vao.bind());
+		RETURN_ON_ERROR_CODE(plotVAO.bind());
 		RETURN_ON_GL_ERROR(glLineWidth(width));
 		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINE_STRIP, 0, n));
-		vao.unbind();
+		RETURN_ON_ERROR_CODE(plotVAO.unbind());
+
+		RETURN_ON_ERROR_CODE(axisVAO.bind());
+		RETURN_ON_GL_ERROR(glLineWidth(1));
+		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINES, 0, axisLines));
+		RETURN_ON_ERROR_CODE(axisVAO.unbind());
+
 		return EC::ErrorCode();
 	}
 
