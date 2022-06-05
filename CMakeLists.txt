@@ -17,8 +17,15 @@ option(GLFW_BUILD_DOCS OFF)
 option(GLFW_INSTALL OFF)
 add_subdirectory(vendor/glfw)
 
-set(CPP cpp/main.cpp)
+set(CPP
+	cpp/main.cpp
+	cpp/primitives.cpp
+)
+set(HEADERS
+	include/primitives.h
+)
 
-add_executable(${PROJECT_NAME} ${CPP})
+add_executable(${PROJECT_NAME} ${CPP} ${HEADERS})
 target_link_libraries(${PROJECT_NAME} PRIVATE glutils glfw error_code)
+target_include_directories(${PROJECT_NAME} PRIVATE include)
 

@@ -4,12 +4,10 @@ cmake_minimum_required(VERSION 3.22)
 
 SET(HEADERS
 	include/glutils.h
-	include/primitives.h
 )
 
 SET(CPP
 	cpp/glutils.cpp
-	cpp/primitives.cpp
 )
 
 SET(SRC ${HEADERS} ${CPP})
