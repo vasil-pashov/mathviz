@@ -5,6 +5,15 @@
 #include "glutils.h"
 #include "primitives.h"
 
+#define EXIT_ON_ERROR_CODE(_Err) \
+{ \
+	const EC::ErrorCode& err = _Err; \
+	if(err.hasError()) { \
+		logError(err.getMessage()); \
+		std::exit(err.getStatus()); \
+	} \
+}
+
 void logError(const char* error) {
 	printf("[Error] %s\n", error);
 }
@@ -15,56 +24,33 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
-
-const char* getLineVertexShader() {
-	return
-		"#version 330 core\n"
-		"layout(location = 0) in vec3 position;\n"
-		"uniform vec3 color;\n"
-		"out vec3 vertexColor;\n"
-		"void main() {\n"
-		"	gl_Position = vec4(position, 1.0f);\n"
-		"	vertexColor = color;\n"
-		"}\n";
-}
-
-const char* getLineFragmentShader() {
-	return
-		"#version 330 core\n"
-		"in vec3 vertexColor;\n"
-		"out vec4 FragColor;\n"
-		"void main() {\n"
-		"	FragColor = vec4(vertexColor, 1.0f);\n"
-		"}\n";
-}
-
-int main() {
-	
+EC::ErrorCode initOpenGL(GLFWwindow** window) {
 	const int status = glfwInit();
 	if (status != GLFW_TRUE) {
 		const char* description;
 		const int errorCode = glfwGetError(&description);
-		logError(description);
-		return status;
+		return EC::ErrorCode(status, "%s", description);
 	}
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	GLFWwindow* window = glfwCreateWindow(800, 900, "mathviz", NULL, NULL);
-	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+	*window = glfwCreateWindow(800, 900, "mathviz", NULL, NULL);
+	glfwMakeContextCurrent(*window);
+	glfwSetFramebufferSizeCallback(*window, framebufferSizeCallback);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-		logError("Failed to initialize GLAD");
-		return -1;
+		return EC::ErrorCode("Failed to initialize GLAD");
 	}
+	glEnable(GL_LINE_SMOOTH);
+	return EC::ErrorCode();
+}
 
+int main() {
+	
+	GLFWwindow* window;
+	EXIT_ON_ERROR_CODE(initOpenGL(&window));
 	GLUtils::Program p;
-	EC::ErrorCode err = p.initFromMegaShader("D:\\Programming\\c++\\glutils\\assets\\shaders\\line_morph.glsl");
-	if (err.hasError()) {
-		logError(err.getMessage());
-		return err.getStatus();
-	}
+	EXIT_ON_ERROR_CODE(p.initFromMegaShader("D:\\Programming\\c++\\glutils\\assets\\shaders\\line_morph.glsl"));
 
 	GLUtils::Plot2D plot;
 	plot.init([](const float x) -> float {return std::sin(x); }, -1.0f, 1.0f, 2, 100);
@@ -74,8 +60,7 @@ int main() {
 	GLUtils::Rectangle rect(glm::vec3(-0.5, -0.5, 1.0f), glm::vec3(0.5f, 0.5f, 1.0f));
 	GLUtils::Morph2D morph;
 	morph.init(rect, c);
-	//morph.init(c, rect);
-	glEnable(GL_LINE_SMOOTH);
+	
 
 	while (!glfwWindowShouldClose(window)) {
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -83,9 +68,8 @@ int main() {
 		p.bind();
 		// printf("%f\n", glfwGetTime());
 		const float lerpCoeff = std::min(glfwGetTime() / 5.0, 1.0);
-		err = p.setUniform("lerpCoeff", lerpCoeff);
-		assert(err.hasError() == false);
-		err = morph.draw();
+		EXIT_ON_ERROR_CODE(p.setUniform("lerpCoeff", lerpCoeff));
+		EXIT_ON_ERROR_CODE(morph.draw());
 		p.unbind();
 
 		glfwSwapBuffers(window);
