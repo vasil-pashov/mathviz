@@ -142,8 +142,8 @@ namespace GLUtils {
 		template<typename FuncT>
 		EC::ErrorCode init(
 			FuncT&& f,
-			std::pair<float, float>& xRange,
-			std::pair<float, float>& yRange,
+			const Range2D& xRange,
+			const Range2D& yRange,
 			float lineWidth,
 			int n
 		) {
@@ -174,11 +174,67 @@ namespace GLUtils {
 		VAO plotVAO;
 		/// min and max x coordinate to show on the plot
 		/// points which are outside of the range will not be computed
-		std::pair<float, float> xRange;
+		Range2D xRange;
 		/// min and max y coordinate to show on the plot
-		std::pair<float, float> yRange;
+		Range2D yRange;
 		float lineWidth;
 		int n;
+	};
+
+	class ReimanArea {
+	public:
+		ReimanArea() : vertexCount(0) {}
+		template<typename FuncT>
+		EC::ErrorCode init(FuncT&& f, const Range2D& xRange, float dh) {
+			const int barsCount = xRange.getLength() / dh;
+			const float z = 0.0f;
+			std::vector<glm::vec3> vertices;
+			// Each bar is represented by 2 triangles
+			// each triangle has 3 verts
+			vertices.reserve(barsCount * 6);
+			float barStart = xRange.from;
+			for (int i = 0; i < barsCount; ++i) {
+				const float barMid = barStart + dh / 2;
+				const float barEnd = barStart + dh;
+				const float fAtBarCenter = f(barMid);
+				const float barBottom = fAtBarCenter > 0 ? 0.0f : fAtBarCenter;
+				const float barTop = fAtBarCenter > 0 ? fAtBarCenter : 0.0f;
+
+				vertices.emplace_back(barEnd, barTop, z);
+				vertices.emplace_back(barStart, barTop, z);
+				vertices.emplace_back(barStart, barBottom, z);
+
+				vertices.emplace_back(barEnd, barTop, z);
+				vertices.emplace_back(barStart, barBottom, z);
+				vertices.emplace_back(barEnd, barBottom, z);
+
+				barStart += dh;
+			}
+			vertexCount = vertices.size();
+			BufferLayout l;
+			l.addAttribute(VertexType::Float, 3);
+			const int64_t byteSize = vertices.size() * sizeof(vertices[0]);
+			RETURN_ON_ERROR_CODE(vertexBuffer.init(BufferType::Vertex));
+			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
+			RETURN_ON_ERROR_CODE(vao.init());
+			RETURN_ON_ERROR_CODE(vao.bind());
+			RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(l));
+			RETURN_ON_ERROR_CODE(vertexBuffer.upload(byteSize, vertices.data()));
+			RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+			RETURN_ON_ERROR_CODE(vao.unbind());
+			return EC::ErrorCode();
+		}
+
+		EC::ErrorCode draw() const {
+			RETURN_ON_ERROR_CODE(vao.bind());
+			RETURN_ON_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, vertexCount));
+			RETURN_ON_GL_ERROR(vao.unbind());
+			return EC::ErrorCode();
+		}
+	private:
+		VAO vao;
+		Buffer vertexBuffer;
+		int vertexCount;
 	};
 
 	class Canvas {

@@ -54,11 +54,19 @@ int main() {
 	EXIT_ON_ERROR_CODE(initOpenGL(&window));
 	GLUtils::Program morphProgram, plotProgram;
 	EXIT_ON_ERROR_CODE(morphProgram.initFromMegaShader("D:\\Programming\\c++\\glutils\\assets\\shaders\\line_morph.glsl"));
-	EXIT_ON_ERROR_CODE(plotProgram.initFromMegaShader("D:\\Programming\\c++\\glutils\\assets\\shaders\\line.glsl"));
+	EXIT_ON_ERROR_CODE(plotProgram.initFromMegaShader("D:\\Programming\\c++\\glutils\\assets\\shaders\\flat_color.glsl"));
 
 	GLUtils::Plot2D plot;
-	// plot.init([](const float x) -> float {return std::sin(x); }, -10.0f, 10.0f, 2, 100);
+	const GLUtils::Range2D xRange(-5, 5);
+	const GLUtils::Range2D yRange(-1, 1);
+	const auto f = [](float x) -> float {
+		return std::sin(x);
+	};
+	plot.init(f, xRange, yRange, 1.0f, 100);
 	plot.upload();
+
+	GLUtils::ReimanArea r;
+	EXIT_ON_ERROR_CODE(r.init(f, xRange, 0.1));
 
 	GLUtils::Circle c(100, 5);
 	GLUtils::Rectangle rect(glm::vec3(-5.f, -5.f, 1.0f), glm::vec3(5.f, 5.f, 1.0f));
@@ -92,10 +100,13 @@ int main() {
 		morphProgram.unbind();*/
 
 		EXIT_ON_ERROR_CODE(plotProgram.bind());
-		EXIT_ON_ERROR_CODE(morphProgram.setUniform("projection", ortho, false));
-		EXIT_ON_ERROR_CODE(morphProgram.setUniform("view", view, false));
+		EXIT_ON_ERROR_CODE(plotProgram.setUniform("projection", ortho, false));
+		EXIT_ON_ERROR_CODE(plotProgram.setUniform("view", view, false));
 		EXIT_ON_ERROR_CODE(plotProgram.setUniform("color", glm::vec3(0.5f, 0.5f, 0.f)));
 		EXIT_ON_ERROR_CODE(plot.draw());
+
+		EXIT_ON_ERROR_CODE(plotProgram.setUniform("color", glm::vec3(0.2f, 0.7f, 3.f)));
+		EXIT_ON_ERROR_CODE(r.draw());
 		plotProgram.unbind();
 
 		glfwSwapBuffers(window);

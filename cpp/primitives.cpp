@@ -45,14 +45,14 @@ namespace GLUtils {
 		void* mapped;
 		RETURN_ON_ERROR_CODE(plotVertexBuffer.map(mapped, BufferAccessType::Write));
 		
-		float maxHeight = f(xRange.first);
+		float maxHeight = f(xRange.from);
 		float minHeight = maxHeight;
-		const float dh = (xRange.second - xRange.first) / (n-1);
+		const float dh = std::abs(xRange.getLength()) / (n-1);
 		for (int i = 0; i < n; ++i) {
-			const float y = f(xRange.first + i * dh);
+			const float y = f(xRange.from + i * dh);
 			maxHeight = std::max(maxHeight, y);
 			minHeight = std::min(minHeight, y);
-			const glm::vec3 point(xRange.first + i * dh, y, 0.0f);
+			const glm::vec3 point(xRange.from + i * dh, y, 0.0f);
 			static_cast<glm::vec3*>(mapped)[i] = point;
 		}
 		RETURN_ON_ERROR_CODE(plotVertexBuffer.unmap());
