@@ -11,6 +11,24 @@ namespace EC {
 
 namespace GLUtils {
 
+	struct Range2D {
+		Range2D() : from(0), to(0) {}
+		Range2D(float from, float to) : from(from), to(to) {
+			assert(from <= to);
+		}
+		float getLength() const {
+			return to - from;
+		}
+		bool contains(float x) const {
+			return x >= from && x <= to;
+		}
+		float getMid() const {
+			return (to - from) / 2;
+		}
+		float from;
+		float to;
+	};
+
 	constexpr float PI = 3.141592653589793;
 
 	/// @brief A straight line
@@ -38,32 +56,102 @@ namespace GLUtils {
 		float width;
 	};
 
+	class Axes {
+	public:
+		Axes() : xRange{0, 0}, yRange{0, 0} {}
+		EC::ErrorCode init(const Range2D& xRange, const Range2D yRange, float markDh) {
+			this->xRange = xRange;
+			this->yRange = yRange;
+			const int axisCount = 2;
+			const int xMarksCount = xRange.getLength() / markDh;
+			const int yMarksCount = yRange.getLength() / markDh;
+			const int totalLinesCount = xMarksCount + yMarksCount + axisCount;
+			const int totalVertices = totalLinesCount * 2;
+			const float z = 0.0f;
+			std::vector<glm::vec3> lineVertices;
+			lineVertices.reserve(totalVertices);
+			// x axis
+			const float xAxisYCoordinate = yRange.contains(0.0f) ? 0.0f : yRange.getMid();
+			lineVertices.emplace_back(xRange.from, xAxisYCoordinate, z);
+			lineVertices.emplace_back(xRange.to, xAxisYCoordinate, z);
+			// y axis
+			const float yAxisXCoordinate = xRange.contains(0.0f) ? 0.0f : xRange.getMid();
+			lineVertices.emplace_back(yAxisXCoordinate, yRange.from, z);
+			lineVertices.emplace_back(yAxisXCoordinate, yRange.to, z);
+
+			const float markHalfLength = 0.1;
+			// x axis marks
+			const float xMarkStart = int(xRange.from / markDh) * markDh;
+			for (float xMarkPos = xMarkStart; xMarkPos < xRange.to; xMarkPos += markDh) {
+				lineVertices.emplace_back(xMarkPos, xAxisYCoordinate - markHalfLength, z);
+				lineVertices.emplace_back(xMarkPos, xAxisYCoordinate + markHalfLength, z);
+			}
+			// y axis marks
+			const float yMarkStart = int(yRange.from / markDh) * markDh;
+			for (float yMarkPos = yMarkStart; yMarkPos < yRange.to; yMarkPos += markDh) {
+				lineVertices.emplace_back(yAxisXCoordinate - markHalfLength, yMarkPos, z);
+				lineVertices.emplace_back(yAxisXCoordinate + markHalfLength, yMarkPos, z);
+			}
+			assert(lineVertexCount == lineVertices.size());
+			lineVertexCount = lineVertices.size();
+			const int64_t byteSize = lineVertices.size() * sizeof(lineVertices[0]);
+			BufferLayout l;
+			l.addAttribute(VertexType::Float, 3);
+			RETURN_ON_ERROR_CODE(vertexBuffer.init(BufferType::Vertex));
+			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
+			RETURN_ON_ERROR_CODE(vao.init());
+			RETURN_ON_ERROR_CODE(vao.bind());
+			RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(l));
+			RETURN_ON_ERROR_CODE(vertexBuffer.upload(byteSize, lineVertices.data()));
+			RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+			RETURN_ON_ERROR_CODE(vao.unbind());
+			return EC::ErrorCode();
+		}
+		EC::ErrorCode draw() const {
+			RETURN_ON_ERROR_CODE(vao.bind());
+			RETURN_ON_GL_ERROR(glDrawArrays(GL_LINES, 0, lineVertexCount));
+			RETURN_ON_ERROR_CODE(vao.unbind());
+			return EC::ErrorCode();
+		}
+	private:
+		Range2D xRange;
+		Range2D yRange;
+		VAO vao;
+		Buffer vertexBuffer;
+		/// Used by the draw call. The number of vertices (not lines)
+		/// which will be used to draw the lines
+		int lineVertexCount;
+	};
+
 	/// @brief Create a curve following a 2D plot.
 	/// Each x coordinate in world space will corelate to a y coordinate in world space.
 	class Plot2D {
 	public:
-		Plot2D() : from(0), to(0), n(0), width(0) {}
+		Plot2D() : xRange{ 0, 0 }, yRange{ 0, 0 }, n(0), lineWidth{1.0f} {}
 		/// @brief Initialize the curve
 		/// @tparam FuncT Type of the fuctor which will eval the function. It must accept one float and
 		/// return a float.
 		/// @param f The function which will be plotted.
 		/// @param from The minimal x value of the function in world space.
 		/// @param to The maximal x value of the function in world space.
-		/// @param dx The curve is drawn by connecting linear pieces. The dx value dictates
-		/// the space between two ends of the line (in world space).
-		/// @param width The width of the line in pixel. Fractional values are supported for
+		/// @param lineWidth The width of the line in pixel. Fractional values are supported for
 		/// antialiased lines only. In case of fractional value without antialiasing the width
 		/// will be rounded.
+		/// @param n Number of points where the plot will be evaluated. The larger this value
+		/// the smoother the plot
 		template<typename FuncT>
-		EC::ErrorCode init(FuncT&& f, float from, float to, float width, int n) {
-			if (from > to) {
-				std::swap(from, to);
-			}
+		EC::ErrorCode init(
+			FuncT&& f,
+			std::pair<float, float>& xRange,
+			std::pair<float, float>& yRange,
+			float lineWidth,
+			int n
+		) {
 			this->f = std::forward<FuncT>(f);
-			this->from = from;
-			this->to = to;
+			this->xRange = xRange;
+			this->yRange = yRange;
+			this->lineWidth = lineWidth;
 			this->n = n;
-			this->width = width;
 
 			GLUtils::BufferLayout layout;
 			layout.addAttribute(GLUtils::VertexType::Float, 3);
@@ -76,14 +164,6 @@ namespace GLUtils {
 			RETURN_ON_ERROR_CODE(plotVertexBuffer.unbind());
 			RETURN_ON_ERROR_CODE(plotVAO.unbind());
 
-			RETURN_ON_ERROR_CODE(axisVertexBuffer.init(GLUtils::BufferType::Vertex));
-			RETURN_ON_ERROR_CODE(axisVAO.init());
-			RETURN_ON_ERROR_CODE(axisVAO.bind());
-			RETURN_ON_ERROR_CODE(axisVertexBuffer.bind());
-			RETURN_ON_ERROR_CODE(axisVertexBuffer.setLayout(layout));
-			RETURN_ON_ERROR_CODE(axisVertexBuffer.unbind());
-			RETURN_ON_ERROR_CODE(axisVAO.unbind());
-
 			return EC::ErrorCode();
 		}
 		EC::ErrorCode upload();
@@ -91,14 +171,14 @@ namespace GLUtils {
 	private:
 		std::function<float(float)> f;
 		Buffer plotVertexBuffer;
-		Buffer axisVertexBuffer;
 		VAO plotVAO;
-		VAO axisVAO;
-		float width;
-		float from;
-		float to;
+		/// min and max x coordinate to show on the plot
+		/// points which are outside of the range will not be computed
+		std::pair<float, float> xRange;
+		/// min and max y coordinate to show on the plot
+		std::pair<float, float> yRange;
+		float lineWidth;
 		int n;
-		int axisLines;
 	};
 
 	class Canvas {

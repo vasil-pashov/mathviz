@@ -57,7 +57,7 @@ int main() {
 	EXIT_ON_ERROR_CODE(plotProgram.initFromMegaShader("D:\\Programming\\c++\\glutils\\assets\\shaders\\line.glsl"));
 
 	GLUtils::Plot2D plot;
-	plot.init([](const float x) -> float {return std::sin(x); }, -10.0f, 10.0f, 2, 100);
+	// plot.init([](const float x) -> float {return std::sin(x); }, -10.0f, 10.0f, 2, 100);
 	plot.upload();
 
 	GLUtils::Circle c(100, 5);
