@@ -53,8 +53,8 @@ int main() {
 	GLFWwindow* window;
 	EXIT_ON_ERROR_CODE(initOpenGL(&window));
 	GLUtils::Program morphProgram, plotProgram;
-	EXIT_ON_ERROR_CODE(morphProgram.initFromMegaShader("D:\\Programming\\c++\\glutils\\assets\\shaders\\line_morph.glsl"));
-	EXIT_ON_ERROR_CODE(plotProgram.initFromMegaShader("D:\\Programming\\c++\\glutils\\assets\\shaders\\flat_color.glsl"));
+	EXIT_ON_ERROR_CODE(morphProgram.initFromMegaShader("\\assets\\shaders\\line_morph.glsl"));
+	EXIT_ON_ERROR_CODE(plotProgram.initFromMegaShader("\\assets\\shaders\\flat_color.glsl"));
 
 	GLUtils::Plot2D plot;
 	const GLUtils::Range2D xRange(-5, 5);
@@ -90,14 +90,6 @@ int main() {
 	while (!glfwWindowShouldClose(window)) {
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-		/*morphProgram.bind();
-		morphProgram.setUniform("projection", ortho, false);
-		morphProgram.setUniform("view", view, false);
-		// printf("%f\n", glfwGetTime());
-		const float lerpCoeff = std::min(glfwGetTime() / 1, 1.0);
-		EXIT_ON_ERROR_CODE(morphProgram.setUniform("lerpCoeff", lerpCoeff));
-		EXIT_ON_ERROR_CODE(morph.draw());
-		morphProgram.unbind();*/
 
 		EXIT_ON_ERROR_CODE(plotProgram.bind());
 		EXIT_ON_ERROR_CODE(plotProgram.setUniform("projection", ortho, false));
