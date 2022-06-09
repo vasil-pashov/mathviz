@@ -41,25 +41,30 @@ namespace GLUtils {
 	}
 
 	EC::ErrorCode Plot2D::upload() {
-		RETURN_ON_ERROR_CODE(vertexBuffer.upload(sizeof(glm::vec3) * n, nullptr));
+		RETURN_ON_ERROR_CODE(plotVertexBuffer.upload(sizeof(glm::vec3) * n, nullptr));
 		void* mapped;
-		RETURN_ON_ERROR_CODE(vertexBuffer.map(mapped, BufferAccessType::Write));
+		RETURN_ON_ERROR_CODE(plotVertexBuffer.map(mapped, BufferAccessType::Write));
 		
-		const float dh = (to - from) / (n-1);
+		float maxHeight = f(xRange.from);
+		float minHeight = maxHeight;
+		const float dh = std::abs(xRange.getLength()) / (n-1);
 		for (int i = 0; i < n; ++i) {
-			const glm::vec3 point(from + i * dh, f(from + i * dh), 0.0f);
+			const float y = f(xRange.from + i * dh);
+			maxHeight = std::max(maxHeight, y);
+			minHeight = std::min(minHeight, y);
+			const glm::vec3 point(xRange.from + i * dh, y, 0.0f);
 			static_cast<glm::vec3*>(mapped)[i] = point;
 		}
-		RETURN_ON_ERROR_CODE(vertexBuffer.unmap());
-		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+		RETURN_ON_ERROR_CODE(plotVertexBuffer.unmap());
+		RETURN_ON_ERROR_CODE(plotVertexBuffer.unbind());
 		return EC::ErrorCode();
 	}
 
 	EC::ErrorCode Plot2D::draw() const {
-		RETURN_ON_ERROR_CODE(vao.bind());
-		RETURN_ON_GL_ERROR(glLineWidth(width));
+		RETURN_ON_ERROR_CODE(plotVAO.bind());
+		RETURN_ON_GL_ERROR(glLineWidth(lineWidth));
 		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINE_STRIP, 0, n));
-		vao.unbind();
+		RETURN_ON_ERROR_CODE(plotVAO.unbind());
 		return EC::ErrorCode();
 	}
 
