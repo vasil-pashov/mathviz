@@ -29,3 +29,23 @@ add_executable(${PROJECT_NAME} ${CPP} ${HEADERS})
 target_link_libraries(${PROJECT_NAME} PRIVATE glutils glfw error_code)
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 
+# Handle resources
+# For now add dependency on all files in the assets folder
+# and copy all assets if any of them changes. This might
+# become slow when assets grow, but it's the easiest way
+# to do it at this point.
+file(GLOB_RECURSE ASSETS ${PROJECT_SOURCE_DIR}/assets/*)
+add_custom_command(
+	OUTPUT assets/assets.stamp
+	DEPENDS "${ASSETS}"
+	COMMAND ${CMAKE_COMMAND} -E copy_directory
+			${CMAKE_SOURCE_DIR}/assets
+			$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets
+	COMMAND ${CMAKE_COMMAND} -E touch assets/assets.stamp
+	COMMENT "Copy assets to build directory"
+)
+
+add_custom_target(
+	prepare_assets ALL
+	DEPENDS assets/assets.stamp
+)
