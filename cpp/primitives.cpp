@@ -17,7 +17,7 @@ namespace GLUtils {
 		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
 		RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
 		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
-		vao.unbind();
+		RETURN_ON_ERROR_CODE(vao.unbind());
 		return EC::ErrorCode();
 	}
 
@@ -36,7 +36,7 @@ namespace GLUtils {
 		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_GL_ERROR(glLineWidth(width));
 		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINES, 0, 2));
-		vao.unbind();
+		RETURN_ON_ERROR_CODE(vao.unbind());
 		return EC::ErrorCode();
 	}
 
@@ -116,7 +116,7 @@ namespace GLUtils {
 	EC::ErrorCode Canvas::draw() const {
 		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, 6));
-		vao.unbind();
+		RETURN_ON_ERROR_CODE(vao.unbind());
 		return EC::ErrorCode();
 	}
 }

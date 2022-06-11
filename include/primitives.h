@@ -250,7 +250,7 @@ namespace GLUtils {
 		EC::ErrorCode draw() const {
 			RETURN_ON_ERROR_CODE(vao.bind());
 			RETURN_ON_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, vertexCount));
-			RETURN_ON_GL_ERROR(vao.unbind());
+			RETURN_ON_ERROR_CODE(vao.unbind());
 			return EC::ErrorCode();
 		}
 	private:
@@ -327,7 +327,7 @@ namespace GLUtils {
 			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
 			RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
 			RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
-			vao.unbind();
+			RETURN_ON_ERROR_CODE(vao.unbind());
 			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
 			const int64_t dataByteSize = data.size() * sizeof(glm::vec3);
 			RETURN_ON_ERROR_CODE(vertexBuffer.upload(dataByteSize, (void*)data.data()));
@@ -345,7 +345,7 @@ namespace GLUtils {
 			RETURN_ON_ERROR_CODE(vao.bind());
 			RETURN_ON_GL_ERROR(glLineWidth(2));
 			RETURN_ON_GL_ERROR(glDrawArrays(GL_LINE_STRIP, 0, vertexCount));
-			vao.unbind();
+			RETURN_ON_ERROR_CODE(vao.unbind());
 			return EC::ErrorCode();
 		}
 	private:
