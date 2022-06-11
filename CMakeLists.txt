@@ -20,9 +20,11 @@ add_subdirectory(vendor/glfw)
 set(CPP
 	cpp/main.cpp
 	cpp/primitives.cpp
+	cpp/context.cpp
 )
 set(HEADERS
 	include/primitives.h
+	include/context.h
 )
 
 add_executable(${PROJECT_NAME} ${CPP} ${HEADERS})
