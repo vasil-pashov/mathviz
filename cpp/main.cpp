@@ -6,7 +6,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "error_code.h"
 #include "glutils.h"
-#include "primitives.h"
 #include "context.h"
 
 #define EXIT_ON_ERROR_CODE(_Err) \

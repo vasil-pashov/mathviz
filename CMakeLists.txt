@@ -19,11 +19,11 @@ add_subdirectory(vendor/glfw)
 
 set(CPP
 	cpp/main.cpp
-	cpp/primitives.cpp
+	cpp/geometry_primitives.cpp
 	cpp/context.cpp
 )
 set(HEADERS
-	include/primitives.h
+	include/geometry_primitives.h
 	include/context.h
 )
 

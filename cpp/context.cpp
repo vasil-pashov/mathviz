@@ -6,7 +6,7 @@
 #include "glutils.h"
 #include "context.h"
 #include "error_code.h"
-#include "primitives.h"
+#include "geometry_primitives.h"
 
 namespace MathViz {
 	static inline void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
