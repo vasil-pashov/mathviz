@@ -349,6 +349,73 @@ namespace GLUtils {
 			}
 		return EC::ErrorCode();
 	}
+	// =========================================================
+	// ==================== PIPELINE ===========================
+	// =========================================================
+
+	EC::ErrorCode Pipeline::init(const char* path) {
+		std::unique_ptr<FILE, decltype(&fclose)> shaderFile(fopen(path, "rb"), &fclose);
+		if (shaderFile == nullptr) {
+			return EC::ErrorCode(errno, "Cannot open file %s path: %s", path, strerror(errno));
+		}
+		fseek(shaderFile.get(), 0L, SEEK_END);
+		const int64_t size = ftell(shaderFile.get());
+		rewind(shaderFile.get());
+		std::string joinedShader;
+		joinedShader.resize(size);
+		fread(joinedShader.data(), 1, size, shaderFile.get());
+
+		// The internal convention is that when we have many shaders in a single file
+		// each shader will start with the line #shader <type_of_shader>
+		// After <type_of_shader> there must be a new line.
+		int currentPos = joinedShader.find_first_of("#shader", 0);
+		while (currentPos < joinedShader.size()) {
+			while (std::isblank(joinedShader[currentPos])) {
+				currentPos++;
+			}
+			// The #shader <shader_type> must end with a newline by convention
+			const int shaderStart = joinedShader.find("\n", currentPos, 1) + 1;
+			const int nextShaderStart = joinedShader.find("#shader", shaderStart, sizeof("#shader") - 1);
+			const int shaderEnd = nextShaderStart == std::string::npos ? size : nextShaderStart;
+			const int shaderSize = shaderEnd - shaderStart;
+			const char* shaderDirective = joinedShader.c_str() + currentPos + sizeof("#shader");
+			ShaderType shaderType;
+			if (std::strncmp("fragment", shaderDirective, sizeof("fragment") - 1) == 0) {
+				shaderType = ShaderType::Fragment;
+			} else if (std::strncmp("vertex", shaderDirective, sizeof("vertex") - 1) == 0) {
+				shaderType = ShaderType::Vertex;
+			} else {
+				const int shaderTypeLen = joinedShader.find('\n', shaderStart) - currentPos;
+				const std::string shaderType = joinedShader.substr(currentPos, shaderTypeLen);
+				return EC::ErrorCode("Unknown shader type: %s", shaderType.c_str());
+			}
+
+			RETURN_ON_ERROR_CODE(shaders[shaderType].loadFromSource(
+				joinedShader.c_str() + shaderStart,
+				shaderSize,
+				shaderType)
+			);
+
+			currentPos = shaderEnd;
+		}
+		return EC::ErrorCode();
+	}
+
+	Pipeline::It Pipeline::begin() {
+		return shaders.begin();
+	}
+
+	Pipeline::It Pipeline::end() {
+		return shaders.end();
+	}
+
+	Pipeline::ConstIt Pipeline::begin() const {
+		return shaders.begin();
+	}
+
+	Pipeline::ConstIt Pipeline::end() const {
+		return shaders.end();
+	}
 
 	// =========================================================
 	// ===================== PROGRAM ===========================
@@ -370,146 +437,22 @@ namespace GLUtils {
 		freeMem();
 	}
 
-	EC::ErrorCode Program::initFromFiles(const char* vertexShaderPath, const char* fragmentShaderPath) {
-		Shader vertexShader;
-		EC::ErrorCode err = vertexShader.loadFromFile(vertexShaderPath, GLUtils::ShaderType::Vertex);
-		RETURN_ON_ERROR_CODE(err);
-
-		Shader fragmentShader;
-		err = fragmentShader.loadFromFile(fragmentShaderPath, GLUtils::ShaderType::Fragment);
-		RETURN_ON_ERROR_CODE(err);
-
-		std::array<Shader*, 2> shaders = { &vertexShader, &fragmentShader };
-
-		handle = glCreateProgram();
-		err = checkGLError();
-		RETURN_ON_ERROR_CODE(err)
-
-			for (int i = 0; i < shaders.size(); ++i) {
-				const unsigned int shaderHandle = shaders[i]->getHandle();
-				RETURN_ON_GL_ERROR(glAttachShader(handle, shaderHandle));
-			}
-		RETURN_ON_GL_ERROR(glLinkProgram(handle));
-		return checkProgramLinkErrors();
-
-		RETURN_ON_ERROR_CODE(err);
-
-		glDetachShader(handle, vertexShader.getHandle());
-		err = checkGLError();
-		RETURN_ON_ERROR_CODE(err);
-
-		glDetachShader(handle, fragmentShader.getHandle());
-		err = checkGLError();
-		RETURN_ON_ERROR_CODE(err);
-
-		return EC::ErrorCode();
-	}
-
-	EC::ErrorCode Program::initFromShaders(const Shader& vertexShader, const Shader& fragmentShader) {
+	EC::ErrorCode Program::init(const Pipeline& pipeline) {
 		RETURN_ON_GL_ERROR(handle = glCreateProgram(););
-		std::array<const Shader*, 2> shaders = { &vertexShader, &fragmentShader };
-		for (int i = 0; i < shaders.size(); ++i) {
-			const unsigned int shaderHandle = shaders[i]->getHandle();
-			RETURN_ON_GL_ERROR(glAttachShader(handle, shaderHandle));
+		for (auto& it : pipeline) {
+			const ShaderHandle h = it.second.getHandle();
+			RETURN_ON_GL_ERROR(glAttachShader(handle, h));
 		}
 		RETURN_ON_GL_ERROR(glLinkProgram(handle));
-		return checkProgramLinkErrors();
-	}
-
-
-	EC::ErrorCode Program::initFromSources(const char* vertexShaderSource, const char* fragmentShaderSource) {
-		Shader vertexShader;
-		EC::ErrorCode err = vertexShader.loadFromSource(vertexShaderSource, GLUtils::ShaderType::Vertex);
-		RETURN_ON_ERROR_CODE(err);
-
-		Shader fragmentShader;
-		err = fragmentShader.loadFromSource(fragmentShaderSource, GLUtils::ShaderType::Fragment);
-		RETURN_ON_ERROR_CODE(err);
-
-		std::array<Shader*, 2> shaders = { &vertexShader, &fragmentShader };
-
-		handle = glCreateProgram();
-		err = checkGLError();
-		RETURN_ON_ERROR_CODE(err)
-
-			for (int i = 0; i < shaders.size(); ++i) {
-				const unsigned int shaderHandle = shaders[i]->getHandle();
-				RETURN_ON_GL_ERROR(glAttachShader(handle, shaderHandle));
-			}
-		RETURN_ON_GL_ERROR(glLinkProgram(handle));
-		return checkProgramLinkErrors();
-
-		RETURN_ON_ERROR_CODE(err);
-
-		glDetachShader(handle, vertexShader.getHandle());
-		err = checkGLError();
-		RETURN_ON_ERROR_CODE(err);
-
-		glDetachShader(handle, fragmentShader.getHandle());
-		err = checkGLError();
-		RETURN_ON_ERROR_CODE(err);
-
+		RETURN_ON_ERROR_CODE(checkProgramLinkErrors());
+		for (auto& it : pipeline) {
+			const ShaderHandle h = it.second.getHandle();
+			glDetachShader(handle, h);
+			assert(checkGLError().hasError() == false);
+		}
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode Program::initFromMegaShader(const char* path) {
-		std::unique_ptr<FILE, decltype(&fclose)> shaderFile(fopen(path, "rb"), &fclose);
-		if (shaderFile == nullptr) {
-			return EC::ErrorCode(errno, "Cannot open file %s path: %s", path, strerror(errno));
-		}
-		fseek(shaderFile.get(), 0L, SEEK_END);
-		const int64_t size = ftell(shaderFile.get());
-		rewind(shaderFile.get());
-		std::string joinedShader;
-		joinedShader.resize(size);
-		fread(joinedShader.data(), 1, size, shaderFile.get());
-
-		std::array<Shader, 2> shaders;
-		std::array<bool, 2> isInitialized;
-		// The internal convention is that when we have many shaders in a single file
-		// each shader will start with the line #shader <type_of_shader>
-		// After <type_of_shader> there must be a new line.
-		int currentPos = joinedShader.find_first_of("#shader", 0);
-		while (currentPos < joinedShader.size()) {
-			while (std::isblank(joinedShader[currentPos])) {
-				currentPos++;
-			}
-			// The #shader <shader_type> must end with a newline by convention
-			const int shaderStart = joinedShader.find("\n", currentPos, 1) + 1;
-			const int nextShaderStart = joinedShader.find("#shader", shaderStart, sizeof("#shader")-1);
-			const int shaderEnd = nextShaderStart == std::string::npos ? size : nextShaderStart;
-			const int shaderSize = shaderEnd - shaderStart;
-			const char* shaderDirective = joinedShader.c_str() + currentPos + sizeof("#shader");
-			ShaderType shaderType;
-			if (std::strncmp("fragment", shaderDirective, sizeof("fragment") - 1) == 0) {
-				shaderType = ShaderType::Fragment;
-			} else if (std::strncmp("vertex", shaderDirective, sizeof("vertex") - 1) == 0) {
-				shaderType = ShaderType::Vertex;
-			} else {
-				const int shaderTypeLen = joinedShader.find('\n', shaderStart) - currentPos;
-				const std::string shaderType = joinedShader.substr(currentPos, shaderTypeLen);
-				return EC::ErrorCode("Unknown shader type: %s", shaderType.c_str());
-			}
-			isInitialized[static_cast<int>(shaderType)] = true;
-			RETURN_ON_ERROR_CODE(shaders[static_cast<int>(shaderType)].loadFromSource(
-				joinedShader.c_str() + shaderStart,
-				shaderSize,
-				shaderType)
-			);
-
-			currentPos = shaderEnd;
-		}
-		for (int i = 0; i < isInitialized.size(); ++i) {
-			if (isInitialized[i] == false) {
-				return EC::ErrorCode("Not all required shaders are initialized.");
-			}
-		}
-		RETURN_ON_ERROR_CODE(initFromShaders(
-			shaders[static_cast<int>(ShaderType::Vertex)],
-			shaders[static_cast<int>(ShaderType::Fragment)])
-		);
-		return EC::ErrorCode();
-	}
 
 	ProgramHandle Program::getHandle() const {
 		return handle;
