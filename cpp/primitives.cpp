@@ -49,7 +49,8 @@ namespace GLUtils {
 		float minHeight = maxHeight;
 		const float dh = std::abs(xRange.getLength()) / (n-1);
 		for (int i = 0; i < n; ++i) {
-			const float y = f(xRange.from + i * dh);
+			const float x = xRange.from + i * dh;
+			const float y = f(x);
 			maxHeight = std::max(maxHeight, y);
 			minHeight = std::min(minHeight, y);
 			const glm::vec3 point(xRange.from + i * dh, y, 0.0f);

@@ -262,7 +262,7 @@ namespace GLUtils {
 
 	class Texture2D {
 	public:
-		Texture2D() : width(0), height(0), texture(0), channelsCount(0) {}
+		Texture2D() : texture(0), width(0), height(0), channelsCount(0) {}
 
 		~Texture2D() {
 			freeMem();

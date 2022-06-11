@@ -49,3 +49,15 @@ add_custom_target(
 	prepare_assets ALL
 	DEPENDS assets/assets.stamp
 )
+
+if(MSVC)
+	target_compile_options(${PROJECT_NAME} PRIVATE
+		/W4
+		/Wall
+		/we4834 # [[nodiscard]] attribute with ignored result
+		/we4715 # Not all control paths return a value
+		/we5038 # Constructor initialization order doe not match order of declaration
+	)
+else()
+  target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
+endif()
