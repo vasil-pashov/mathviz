@@ -359,9 +359,15 @@ namespace GLUtils {
 		program.handle = 0;
 	}
 
+	Program& Program::operator=(Program&& other) noexcept {
+		freeMem();
+		this->handle = other.handle;
+		other.handle = 0;
+		return *this;
+	}
+
 	Program::~Program() {
-		glDeleteProgram(handle);
-		handle = 0;
+		freeMem();
 	}
 
 	EC::ErrorCode Program::initFromFiles(const char* vertexShaderPath, const char* fragmentShaderPath) {
@@ -547,6 +553,12 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
+
+	void Program::freeMem() {
+		glDeleteProgram(handle);
+		assert(checkGLError().hasError() == false);
+		handle = 0;
+	}
 	// =========================================================
 	// ========================= VAO ===========================
 	// =========================================================

@@ -174,7 +174,7 @@ namespace GLUtils {
 		Program& operator=(const Program&) = delete;
 		// Move semantics
 		Program(Program&&) noexcept;
-		Program& operator=(Program&&) = default;
+		Program& operator=(Program&&) noexcept;
 		EC::ErrorCode initFromMegaShader(const char* path);
 		EC::ErrorCode initFromFiles(const char* vertexShaderPath, const char* indexShaderPath);
 		EC::ErrorCode initFromShaders(const Shader& vertexShader, const Shader& fragmentShader);
@@ -193,6 +193,7 @@ namespace GLUtils {
 		EC::ErrorCode setUniform(const char* name, float value) const;
 		EC::ErrorCode bind() const;
 		void unbind() const;
+		void freeMem();
 	private:
 		unsigned int handle;
 		/// Call this in order to get link errors (if any) for the sahder program
