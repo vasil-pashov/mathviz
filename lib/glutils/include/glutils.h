@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <cinttypes>
+#include <unordered_map>
 #include "glad/glad.h"
 #include "glm/mat4x4.hpp"
 #include "error_code.h"
@@ -180,6 +181,24 @@ namespace GLUtils {
 		EC::ErrorCode checkShaderCompilationError();
 	};
 
+	class Pipeline {
+	public:
+		using It = std::unordered_map<ShaderType, Shader>::iterator;
+		using ConstIt = std::unordered_map<ShaderType, Shader>::const_iterator;
+		Pipeline() = default;
+		Pipeline(const Pipeline&) = delete;
+		Pipeline& operator=(const Pipeline&) = delete;
+		Pipeline(Pipeline&&) = default;
+		Pipeline& operator=(Pipeline&&) = default;
+		EC::ErrorCode init(const char* path);
+		It begin();
+		It end();
+		ConstIt begin() const;
+		ConstIt end() const;
+	private:
+		std::unordered_map<ShaderType, Shader> shaders;
+	};
+
 	/// Class which will link different shaders into one program and hold the handle to it
 	class Program {
 	public:
@@ -192,13 +211,7 @@ namespace GLUtils {
 		Program(Program&&) noexcept;
 		Program& operator=(Program&&) noexcept;
 		[[nodiscard]]
-		EC::ErrorCode initFromMegaShader(const char* path);
-		[[nodiscard]]
-		EC::ErrorCode initFromFiles(const char* vertexShaderPath, const char* indexShaderPath);
-		[[nodiscard]]
-		EC::ErrorCode initFromShaders(const Shader& vertexShader, const Shader& fragmentShader);
-		[[nodiscard]]
-		EC::ErrorCode initFromSources(const char* vertexShaderSrc, const char* fragmentShaderSrc);
+		EC::ErrorCode init(const Pipeline& pipeline);
 		/// Return the api handle to the program
 		[[nodiscard]]
 		ProgramHandle getHandle() const;

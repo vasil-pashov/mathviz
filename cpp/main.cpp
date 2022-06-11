@@ -53,8 +53,11 @@ int main() {
 	GLFWwindow* window;
 	EXIT_ON_ERROR_CODE(initOpenGL(&window));
 	GLUtils::Program morphProgram, plotProgram;
-	EXIT_ON_ERROR_CODE(morphProgram.initFromMegaShader("\\assets\\shaders\\line_morph.glsl"));
-	EXIT_ON_ERROR_CODE(plotProgram.initFromMegaShader("\\assets\\shaders\\flat_color.glsl"));
+	GLUtils::Pipeline morphPipeline, plotPipeline;
+	EXIT_ON_ERROR_CODE(morphPipeline.init("\\assets\\shaders\\line_morph.glsl"));
+	EXIT_ON_ERROR_CODE(plotPipeline.init("\\assets\\shaders\\flat_color.glsl"));
+	EXIT_ON_ERROR_CODE(morphProgram.init(morphPipeline));
+	EXIT_ON_ERROR_CODE(plotProgram.init(plotPipeline));
 
 	GLUtils::Plot2D plot;
 	const GLUtils::Range2D xRange(-5, 5);
