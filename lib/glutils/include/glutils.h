@@ -72,9 +72,11 @@ namespace GLUtils {
 		BufferLayout(BufferLayout&&) = delete;
 		BufferLayout& operator=(const BufferLayout&&) = delete;
 		void addAttribute(VertexType type, int count, bool normalized = false);
+		[[nodiscard]]
 		const std::vector<AttributeLayout>& getAttributes() const {
 			return layout;
 		}
+		[[nodiscard]]
 		unsigned int getStride() const {
 			return stride;
 		}
@@ -94,25 +96,35 @@ namespace GLUtils {
 		Buffer& operator=(Buffer&&) noexcept;;
 		/// Initialize the handle to the buffer. Does not allocate GPU memory
 		/// @param[in] type - Type of the buffer e.g. vertex, index, etc...
+		[[nodiscard]]
 		EC::ErrorCode init(BufferType type);
 		/// Upload data to the GPU
 		/// @param[in] size - Size in bytes of the data to be uploaded
 		/// @param[in] data - Pointer to the data to be uploaded
+		[[nodiscard]]
 		EC::ErrorCode upload(int64_t size, const void* data);
 		/// @brief Bind the buffer and set the attribute layout for it.
+		[[nodiscard]]
 		EC::ErrorCode setLayout(const BufferLayout& layout);
 		/// Destroy the handle and free any data uploaded to this buffer
 		void freeMem();
 		/// return the opengl handle to the buffer
+		[[nodiscard]]
 		BufferHandle getHandle() const;
 		/// Binds the current buffer
+		[[nodiscard]]
 		EC::ErrorCode bind() const;
 		/// Binds the current buffer to a shader binding. Used for UBO and SSBO
 		/// @param[in] bindingIndex The binding index to which the buffer will be bound. Currently must be specified in the shader
+		[[nodiscard]]
 		EC::ErrorCode bind(const int bindingIndex);
+		[[nodiscard]]
 		EC::ErrorCode unbind() const;
+		[[nodiscard]]
 		EC::ErrorCode map(void*& map, BufferAccessType access) const;
+		[[nodiscard]]
 		EC::ErrorCode unmap() const;
+		[[nodiscard]]
 		EC::ErrorCode setLayout(const AttributeLayout& layout);
 	private:
 		unsigned int handle;
@@ -147,16 +159,20 @@ namespace GLUtils {
 		/// @param[in] source Source code for the shader
 		/// @param[in] length The length of the shader (in characters) 
 		/// @param[in] type Type of the shader e.g. vertex, fragment, etc...
+		[[nodiscard]]
 		EC::ErrorCode loadFromSource(const char* source, int length, ShaderType type);
 		/// Create the shader given the source code
 		/// @param[in] source - Source code for the shader
 		/// @param[in] type - Type of the shader e.g. vertex, fragment, etc...
+		[[nodiscard]]
 		EC::ErrorCode loadFromSource(const char* source, ShaderType type);
 		/// Create the shader by reading its source code from the hard drive
 		/// @param[in] path - the path to the file with the shader source code
 		/// @param[in] type - Type of the shader e.g. vertex, fragment, etc...
+		[[nodiscard]]
 		EC::ErrorCode loadFromFile(const char* path, ShaderType type);
 		/// Return the api handle to the shader
+		[[nodiscard]]
 		ShaderHandle getHandle() const;
 	private:
 		unsigned int handle;
@@ -175,22 +191,31 @@ namespace GLUtils {
 		// Move semantics
 		Program(Program&&) noexcept;
 		Program& operator=(Program&&) noexcept;
+		[[nodiscard]]
 		EC::ErrorCode initFromMegaShader(const char* path);
+		[[nodiscard]]
 		EC::ErrorCode initFromFiles(const char* vertexShaderPath, const char* indexShaderPath);
+		[[nodiscard]]
 		EC::ErrorCode initFromShaders(const Shader& vertexShader, const Shader& fragmentShader);
+		[[nodiscard]]
 		EC::ErrorCode initFromSources(const char* vertexShaderSrc, const char* fragmentShaderSrc);
 		/// Return the api handle to the program
+		[[nodiscard]]
 		ProgramHandle getHandle() const;
 		/// Set a uniform float mat4
 		/// @param[in] name - Name of the uniform must match a uniform in the shaders
 		/// @param[in] matrix - 4x4 matrix which will be transfered as uniform
 		/// @param[in] transpose - if true the matrix transpose will be uploaded to the GPU
+		[[nodiscard]]
 		EC::ErrorCode setUniform(const char* name, const glm::mat4& matrix, bool transpose) const;
 		/// Set a uniform float vec3 for vector
 		/// @param[in] name - Name of the uniform must match a uniform in the shaders
 		/// @param[in] float - pointer to the first element of the matrix
+		[[nodiscard]]
 		EC::ErrorCode setUniform(const char* name, const glm::vec3& vector) const;
+		[[nodiscard]]
 		EC::ErrorCode setUniform(const char* name, float value) const;
+		[[nodiscard]]
 		EC::ErrorCode bind() const;
 		void unbind() const;
 		void freeMem();
@@ -213,10 +238,13 @@ namespace GLUtils {
 		VAO(VAO&&) noexcept;
 		VAO& operator=(VAO&&) noexcept;
 		/// Init the VAO handle
+		[[nodiscard]]
 		EC::ErrorCode init();
 		/// Bind the VAO, when bound the vao starts recording buffer layouts and index buffers
+		[[nodiscard]]
 		EC::ErrorCode bind() const;
 		/// Unbinds the current VAO by binding the default vao which is 0
+		[[nodiscard]]
 		EC::ErrorCode unbind() const;
 		/// unbind and delete the vao
 		void freeMem();
@@ -262,7 +290,7 @@ namespace GLUtils {
 
 	class Texture2D {
 	public:
-		Texture2D() : width(0), height(0), texture(0), channelsCount(0) {}
+		Texture2D() : texture(0), width(0), height(0), channelsCount(0) {}
 
 		~Texture2D() {
 			freeMem();

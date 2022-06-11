@@ -3,7 +3,7 @@
 #include <array>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>s
+#include <glm/gtc/type_ptr.hpp>
 #include "error_code.h"
 #include "glutils.h"
 #include "primitives.h"

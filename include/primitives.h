@@ -29,12 +29,30 @@ namespace GLUtils {
 		float to;
 	};
 
-	constexpr float PI = 3.141592653589793;
+	constexpr float PI = 3.141592653589793f;
 
 	/// @brief A straight line
 	class Line {
 	public:
 		Line() : start{0.0f, 0.0f, 0.0f}, end{0.0f, 0.0f, 0.0f}, width(0) {}
+		Line(Line&& other) noexcept :
+			start(other.start),
+			end(other.end),
+			vertexBuffer(std::move(other.vertexBuffer)),
+			vao(std::move(vao)),
+			width(other.width)
+		{
+
+		}
+
+		Line& operator=(Line&& other) noexcept {
+			vertexBuffer = std::move(other.vertexBuffer);
+			vao = std::move(other.vao);
+			width = other.width;
+			start = other.start;
+			end = other.end;
+			return *this;
+		}
 		/// @brief Inititialize the line
 		/// @param start The start of the line in world space
 		/// @param end The end of the line in world space
@@ -46,6 +64,10 @@ namespace GLUtils {
 		EC::ErrorCode upload();
 		/// @brief Issue a draw call. Must be called only after init and upload are called. 
 		EC::ErrorCode draw() const;
+		void freeMem() {
+			vertexBuffer.freeMem();
+			vao.freeMem();
+		}
 	private:
 		/// The start of the line in world space
 		glm::vec3 start;
@@ -59,12 +81,12 @@ namespace GLUtils {
 	class Axes {
 	public:
 		Axes() : xRange{0, 0}, yRange{0, 0} {}
-		EC::ErrorCode init(const Range2D& xRange, const Range2D yRange, float markDh) {
-			this->xRange = xRange;
-			this->yRange = yRange;
+		EC::ErrorCode init(const Range2D& xRangeIn, const Range2D& yRangeIn, float markDh) {
+			xRange = xRangeIn;
+			yRange = yRangeIn;
 			const int axisCount = 2;
-			const int xMarksCount = xRange.getLength() / markDh;
-			const int yMarksCount = yRange.getLength() / markDh;
+			const int xMarksCount = int(xRange.getLength() / markDh);
+			const int yMarksCount = int(yRange.getLength() / markDh);
 			const int totalLinesCount = xMarksCount + yMarksCount + axisCount;
 			const int totalVertices = totalLinesCount * 2;
 			const float z = 0.0f;
@@ -79,7 +101,7 @@ namespace GLUtils {
 			lineVertices.emplace_back(yAxisXCoordinate, yRange.from, z);
 			lineVertices.emplace_back(yAxisXCoordinate, yRange.to, z);
 
-			const float markHalfLength = 0.1;
+			const float markHalfLength = 0.1f;
 			// x axis marks
 			const float xMarkStart = int(xRange.from / markDh) * markDh;
 			for (float xMarkPos = xMarkStart; xMarkPos < xRange.to; xMarkPos += markDh) {
@@ -127,7 +149,7 @@ namespace GLUtils {
 	/// Each x coordinate in world space will corelate to a y coordinate in world space.
 	class Plot2D {
 	public:
-		Plot2D() : xRange{ 0, 0 }, yRange{ 0, 0 }, n(0), lineWidth{1.0f} {}
+		Plot2D() : xRange{ 0, 0 }, yRange{ 0, 0 }, lineWidth{ 1.0f }, n{ 0 } {}
 		/// @brief Initialize the curve
 		/// @tparam FuncT Type of the fuctor which will eval the function. It must accept one float and
 		/// return a float.
@@ -186,7 +208,7 @@ namespace GLUtils {
 		ReimanArea() : vertexCount(0) {}
 		template<typename FuncT>
 		EC::ErrorCode init(FuncT&& f, const Range2D& xRange, float dh) {
-			const int barsCount = xRange.getLength() / dh;
+			const int barsCount = int(xRange.getLength() / dh);
 			const float z = 0.0f;
 			std::vector<glm::vec3> vertices;
 			// Each bar is represented by 2 triangles
