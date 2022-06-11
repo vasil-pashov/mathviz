@@ -59,21 +59,21 @@ int main() {
 	EXIT_ON_ERROR_CODE(morphProgram.init(morphPipeline));
 	EXIT_ON_ERROR_CODE(plotProgram.init(plotPipeline));
 
-	GLUtils::Plot2D plot;
-	const GLUtils::Range2D xRange(-5, 5);
-	const GLUtils::Range2D yRange(-1, 1);
+	MathViz::Plot2D plot;
+	const MathViz::Range2D xRange(-5, 5);
+	const MathViz::Range2D yRange(-1, 1);
 	const auto f = [](float x) -> float {
 		return std::sin(x);
 	};
 	plot.init(f, xRange, yRange, 1.0f, 100);
 	plot.upload();
 
-	GLUtils::ReimanArea r;
+	MathViz::ReimanArea r;
 	EXIT_ON_ERROR_CODE(r.init(f, xRange, 0.1));
 
-	GLUtils::Circle c(100, 5);
-	GLUtils::Rectangle rect(glm::vec3(-5.f, -5.f, 1.0f), glm::vec3(5.f, 5.f, 1.0f));
-	GLUtils::Morph2D morph;
+	MathViz::Circle c(100, 5);
+	MathViz::Rectangle rect(glm::vec3(-5.f, -5.f, 1.0f), glm::vec3(5.f, 5.f, 1.0f));
+	MathViz::Morph2D morph;
 	morph.init(rect, c);
 
 	const float fov = 45.0f;

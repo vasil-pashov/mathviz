@@ -9,7 +9,7 @@ namespace EC {
 	class ErrorCode;
 }
 
-namespace GLUtils {
+namespace MathViz {
 
 	struct Range2D {
 		Range2D() : from(0), to(0) {}
@@ -73,8 +73,8 @@ namespace GLUtils {
 		glm::vec3 start;
 		/// The end of the line in world space
 		glm::vec3 end;
-		Buffer vertexBuffer;
-		VAO vao;
+		GLUtils::Buffer vertexBuffer;
+		GLUtils::VAO vao;
 		float width;
 	};
 
@@ -117,9 +117,9 @@ namespace GLUtils {
 			assert(lineVertexCount == lineVertices.size());
 			lineVertexCount = lineVertices.size();
 			const int64_t byteSize = lineVertices.size() * sizeof(lineVertices[0]);
-			BufferLayout l;
-			l.addAttribute(VertexType::Float, 3);
-			RETURN_ON_ERROR_CODE(vertexBuffer.init(BufferType::Vertex));
+			GLUtils::BufferLayout l;
+			l.addAttribute(GLUtils::VertexType::Float, 3);
+			RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
 			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
 			RETURN_ON_ERROR_CODE(vao.init());
 			RETURN_ON_ERROR_CODE(vao.bind());
@@ -138,8 +138,8 @@ namespace GLUtils {
 	private:
 		Range2D xRange;
 		Range2D yRange;
-		VAO vao;
-		Buffer vertexBuffer;
+		GLUtils::VAO vao;
+		GLUtils::Buffer vertexBuffer;
 		/// Used by the draw call. The number of vertices (not lines)
 		/// which will be used to draw the lines
 		int lineVertexCount;
@@ -192,8 +192,8 @@ namespace GLUtils {
 		EC::ErrorCode draw() const;
 	private:
 		std::function<float(float)> f;
-		Buffer plotVertexBuffer;
-		VAO plotVAO;
+		GLUtils::Buffer plotVertexBuffer;
+		GLUtils::VAO plotVAO;
 		/// min and max x coordinate to show on the plot
 		/// points which are outside of the range will not be computed
 		Range2D xRange;
@@ -233,10 +233,10 @@ namespace GLUtils {
 				barStart += dh;
 			}
 			vertexCount = vertices.size();
-			BufferLayout l;
-			l.addAttribute(VertexType::Float, 3);
+			GLUtils::BufferLayout l;
+			l.addAttribute(GLUtils::VertexType::Float, 3);
 			const int64_t byteSize = vertices.size() * sizeof(vertices[0]);
-			RETURN_ON_ERROR_CODE(vertexBuffer.init(BufferType::Vertex));
+			RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
 			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
 			RETURN_ON_ERROR_CODE(vao.init());
 			RETURN_ON_ERROR_CODE(vao.bind());
@@ -254,8 +254,8 @@ namespace GLUtils {
 			return EC::ErrorCode();
 		}
 	private:
-		VAO vao;
-		Buffer vertexBuffer;
+		GLUtils::VAO vao;
+		GLUtils::Buffer vertexBuffer;
 		int vertexCount;
 	};
 
@@ -268,8 +268,8 @@ namespace GLUtils {
 	private:
 		glm::vec3 lowLeft;
 		glm::vec3 upRight;
-		Buffer vertexBuffer;
-		VAO vao;
+		GLUtils::Buffer vertexBuffer;
+		GLUtils::VAO vao;
 	};
 
 	class Morphable2D {
@@ -349,8 +349,8 @@ namespace GLUtils {
 			return EC::ErrorCode();
 		}
 	private:
-		VAO vao;
-		Buffer vertexBuffer;
+		GLUtils::VAO vao;
+		GLUtils::Buffer vertexBuffer;
 		int vertexCount;
 	};
 
