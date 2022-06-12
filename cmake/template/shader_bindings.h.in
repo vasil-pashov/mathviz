@@ -1,0 +1,4 @@
+namespace MathViz {
+	@shader_table_enum@
+	@shader_paths_array@
+}

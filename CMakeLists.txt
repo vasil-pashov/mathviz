@@ -27,6 +27,38 @@ set(HEADERS
 	include/context.h
 )
 
+set(GLOBAL_SHADER_PATHS)
+set(GLOBAL_SHADER_ENUMS)
+function(register_shader shader_path enum_name)
+	list(APPEND GLOBAL_SHADER_PATHS ${shader_path})
+	set(GLOBAL_SHADER_PATHS ${GLOBAL_SHADER_PATHS} PARENT_SCOPE)
+
+	list(APPEND GLOBAL_SHADER_ENUMS ${enum_name})
+	set(GLOBAL_SHADER_ENUMS ${GLOBAL_SHADER_ENUMS} PARENT_SCOPE)
+endfunction()
+
+function(create_shader_manifest)
+	set(first_enum TRUE)
+	set(shader_table_enum "enum ShaderTable {\n")
+	foreach(shader_enum ${GLOBAL_SHADER_ENUMS})
+		if(${first_enum})
+			string(APPEND shader_table_enum "\t\t${shader_enum} = 0,\n")
+			set(first_enum FALSE)
+		else()
+			string(APPEND shader_table_enum "\t\t${shader_enum},\n")
+		endif()
+	endforeach()
+	string(APPEND shader_table_enum "\t\tCount\n\t};\n")
+
+	set(shader_paths_array "const char* shaderPaths[ShaderTable::Count] = {\n")
+	foreach(shader_path ${GLOBAL_SHADER_PATHS})
+		string(APPEND shader_paths_array "\t\t\"${shader_path}\",\n")
+	endforeach()
+	string(APPEND shader_paths_array "\t};\n")
+	configure_file(cmake/template/shader_bindings.h.in generated/include/shader_bindings.h @ONLY)
+	target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/generated/include)
+endfunction()
+
 add_executable(${PROJECT_NAME} ${CPP} ${HEADERS})
 target_link_libraries(${PROJECT_NAME} PRIVATE glutils glfw error_code)
 target_include_directories(${PROJECT_NAME} PRIVATE include)
@@ -63,3 +95,8 @@ if(MSVC)
 else()
   target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
+
+register_shader("assets/shaders/float_color.glsl" "FlatColor")
+register_shader("assets/shaders/morph.glsl" "Morph")
+create_shader_manifest()
+

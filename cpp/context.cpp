@@ -7,6 +7,7 @@
 #include "context.h"
 #include "error_code.h"
 #include "geometry_primitives.h"
+#include "shader_bindings.h"
 
 namespace MathViz {
 	static inline void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
