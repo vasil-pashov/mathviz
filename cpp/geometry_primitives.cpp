@@ -40,6 +40,71 @@ namespace MathViz {
 		return EC::ErrorCode();
 	}
 
+	Axes::Axes() : xRange{0, 0}, yRange{0, 0}, lineVertexCount{0}
+	{
+	}
+	EC::ErrorCode Axes::init(
+		const Range2D& xRangeIn,
+		const Range2D& yRangeIn,
+		float markDh
+	) {
+		xRange = xRangeIn;
+		yRange = yRangeIn;
+		const int axisCount = 2;
+		const int xMarksCount = int(xRange.getLength() / markDh);
+		const int yMarksCount = int(yRange.getLength() / markDh);
+		const int totalLinesCount = xMarksCount + yMarksCount + axisCount;
+		const int totalVertices = totalLinesCount * 2;
+		const float z = 0.0f;
+		std::vector<glm::vec3> lineVertices;
+		lineVertices.reserve(totalVertices);
+		// x axis
+		const float xAxisYCoordinate = yRange.contains(0.0f) ? 0.0f : yRange.getMid();
+		lineVertices.emplace_back(xRange.from, xAxisYCoordinate, z);
+		lineVertices.emplace_back(xRange.to, xAxisYCoordinate, z);
+		// y axis
+		const float yAxisXCoordinate = xRange.contains(0.0f) ? 0.0f : xRange.getMid();
+		lineVertices.emplace_back(yAxisXCoordinate, yRange.from, z);
+		lineVertices.emplace_back(yAxisXCoordinate, yRange.to, z);
+
+		const float markHalfLength = 0.1f;
+		// x axis marks
+		const float xMarkStart = int(xRange.from / markDh) * markDh;
+		for (float xMarkPos = xMarkStart; xMarkPos < xRange.to; xMarkPos += markDh) {
+			lineVertices.emplace_back(xMarkPos, xAxisYCoordinate - markHalfLength, z);
+			lineVertices.emplace_back(xMarkPos, xAxisYCoordinate + markHalfLength, z);
+		}
+		// y axis marks
+		const float yMarkStart = int(yRange.from / markDh) * markDh;
+		for (float yMarkPos = yMarkStart; yMarkPos < yRange.to; yMarkPos += markDh) {
+			lineVertices.emplace_back(yAxisXCoordinate - markHalfLength, yMarkPos, z);
+			lineVertices.emplace_back(yAxisXCoordinate + markHalfLength, yMarkPos, z);
+		}
+		assert(lineVertexCount == lineVertices.size());
+		lineVertexCount = lineVertices.size();
+		const int64_t byteSize = lineVertices.size() * sizeof(lineVertices[0]);
+		GLUtils::BufferLayout l;
+		l.addAttribute(GLUtils::VertexType::Float, 3);
+		RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
+		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
+		RETURN_ON_ERROR_CODE(vao.init());
+		RETURN_ON_ERROR_CODE(vao.bind());
+		RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(l));
+		RETURN_ON_ERROR_CODE(vertexBuffer.upload(byteSize, lineVertices.data()));
+		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+		RETURN_ON_ERROR_CODE(vao.unbind());
+		return EC::ErrorCode();
+	}
+
+	EC::ErrorCode Axes::draw() const {
+		RETURN_ON_ERROR_CODE(vao.bind());
+		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINES, 0, lineVertexCount));
+		RETURN_ON_ERROR_CODE(vao.unbind());
+		return EC::ErrorCode();
+	}
+
+	Plot2D::Plot2D() : xRange{0, 0}, yRange{0, 0}, lineWidth{1.0f}, n{0} {}
+
 	EC::ErrorCode Plot2D::upload() {
 		RETURN_ON_ERROR_CODE(plotVertexBuffer.upload(sizeof(glm::vec3) * n, nullptr));
 		void* mapped;
@@ -68,6 +133,17 @@ namespace MathViz {
 		RETURN_ON_ERROR_CODE(plotVAO.unbind());
 		return EC::ErrorCode();
 	}
+
+	ReimanArea::ReimanArea() : vertexCount(0){}
+
+	EC::ErrorCode ReimanArea::draw() const {
+		RETURN_ON_ERROR_CODE(vao.bind());
+		RETURN_ON_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, vertexCount));
+		RETURN_ON_ERROR_CODE(vao.unbind());
+		return EC::ErrorCode();
+	}
+
+	Canvas::Canvas() : lowLeft{0, 0, 0}, upRight{0, 0, 0} {}
 
 	EC::ErrorCode Canvas::init(const glm::vec3& lowLeft, const glm::vec3& upRight) {
 		this->lowLeft = lowLeft;
