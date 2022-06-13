@@ -80,61 +80,13 @@ namespace MathViz {
 
 	class Axes {
 	public:
-		Axes() : xRange{0, 0}, yRange{0, 0} {}
-		EC::ErrorCode init(const Range2D& xRangeIn, const Range2D& yRangeIn, float markDh) {
-			xRange = xRangeIn;
-			yRange = yRangeIn;
-			const int axisCount = 2;
-			const int xMarksCount = int(xRange.getLength() / markDh);
-			const int yMarksCount = int(yRange.getLength() / markDh);
-			const int totalLinesCount = xMarksCount + yMarksCount + axisCount;
-			const int totalVertices = totalLinesCount * 2;
-			const float z = 0.0f;
-			std::vector<glm::vec3> lineVertices;
-			lineVertices.reserve(totalVertices);
-			// x axis
-			const float xAxisYCoordinate = yRange.contains(0.0f) ? 0.0f : yRange.getMid();
-			lineVertices.emplace_back(xRange.from, xAxisYCoordinate, z);
-			lineVertices.emplace_back(xRange.to, xAxisYCoordinate, z);
-			// y axis
-			const float yAxisXCoordinate = xRange.contains(0.0f) ? 0.0f : xRange.getMid();
-			lineVertices.emplace_back(yAxisXCoordinate, yRange.from, z);
-			lineVertices.emplace_back(yAxisXCoordinate, yRange.to, z);
-
-			const float markHalfLength = 0.1f;
-			// x axis marks
-			const float xMarkStart = int(xRange.from / markDh) * markDh;
-			for (float xMarkPos = xMarkStart; xMarkPos < xRange.to; xMarkPos += markDh) {
-				lineVertices.emplace_back(xMarkPos, xAxisYCoordinate - markHalfLength, z);
-				lineVertices.emplace_back(xMarkPos, xAxisYCoordinate + markHalfLength, z);
-			}
-			// y axis marks
-			const float yMarkStart = int(yRange.from / markDh) * markDh;
-			for (float yMarkPos = yMarkStart; yMarkPos < yRange.to; yMarkPos += markDh) {
-				lineVertices.emplace_back(yAxisXCoordinate - markHalfLength, yMarkPos, z);
-				lineVertices.emplace_back(yAxisXCoordinate + markHalfLength, yMarkPos, z);
-			}
-			assert(lineVertexCount == lineVertices.size());
-			lineVertexCount = lineVertices.size();
-			const int64_t byteSize = lineVertices.size() * sizeof(lineVertices[0]);
-			GLUtils::BufferLayout l;
-			l.addAttribute(GLUtils::VertexType::Float, 3);
-			RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
-			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
-			RETURN_ON_ERROR_CODE(vao.init());
-			RETURN_ON_ERROR_CODE(vao.bind());
-			RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(l));
-			RETURN_ON_ERROR_CODE(vertexBuffer.upload(byteSize, lineVertices.data()));
-			RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
-			RETURN_ON_ERROR_CODE(vao.unbind());
-			return EC::ErrorCode();
-		}
-		EC::ErrorCode draw() const {
-			RETURN_ON_ERROR_CODE(vao.bind());
-			RETURN_ON_GL_ERROR(glDrawArrays(GL_LINES, 0, lineVertexCount));
-			RETURN_ON_ERROR_CODE(vao.unbind());
-			return EC::ErrorCode();
-		}
+		Axes();
+		EC::ErrorCode init(
+			const Range2D& xRangeIn,
+			const Range2D& yRangeIn,
+			float markDh
+		);
+		EC::ErrorCode draw() const;
 	private:
 		Range2D xRange;
 		Range2D yRange;
@@ -149,7 +101,7 @@ namespace MathViz {
 	/// Each x coordinate in world space will corelate to a y coordinate in world space.
 	class Plot2D {
 	public:
-		Plot2D() : xRange{ 0, 0 }, yRange{ 0, 0 }, lineWidth{ 1.0f }, n{ 0 } {}
+		Plot2D();
 		/// @brief Initialize the curve
 		/// @tparam FuncT Type of the fuctor which will eval the function. It must accept one float and
 		/// return a float.
@@ -205,7 +157,7 @@ namespace MathViz {
 
 	class ReimanArea {
 	public:
-		ReimanArea() : vertexCount(0) {}
+		ReimanArea();
 		template<typename FuncT>
 		EC::ErrorCode init(FuncT&& f, const Range2D& xRange, float dh) {
 			const int barsCount = int(xRange.getLength() / dh);
@@ -247,12 +199,7 @@ namespace MathViz {
 			return EC::ErrorCode();
 		}
 
-		EC::ErrorCode draw() const {
-			RETURN_ON_ERROR_CODE(vao.bind());
-			RETURN_ON_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, vertexCount));
-			RETURN_ON_ERROR_CODE(vao.unbind());
-			return EC::ErrorCode();
-		}
+		EC::ErrorCode draw() const;
 	private:
 		GLUtils::VAO vao;
 		GLUtils::Buffer vertexBuffer;
@@ -261,7 +208,7 @@ namespace MathViz {
 
 	class Canvas {
 	public:
-		Canvas() : lowLeft{0, 0, 0}, upRight{0, 0, 0} {}
+		Canvas();
 		EC::ErrorCode init(const glm::vec3& lowLeft, const glm::vec3& upRight);
 		EC::ErrorCode upload();
 		EC::ErrorCode draw() const;
@@ -276,152 +223,60 @@ namespace MathViz {
 	public:
 		virtual int getVertexCount() const = 0;
 		virtual const glm::vec3* getVertices() const = 0;
-		virtual glm::vec3 getClosestVertex(const glm::vec3&) const = 0;
 	};
+
+	class Curve : public Morphable2D {
+	public:
+		enum CurveFlags {
+			// The beginning of the curve should match the ending i.e.
+			// the first and the last vertex will be the same.
+			IsClosed = 1
+		};
+		template<typename FuncT>
+		void init(FuncT&& f, int vertexCountIn, CurveFlags flags) {
+			assert(vertexCountIn > 1);
+			const bool isClosed = flags & CurveFlags::IsClosed;
+			this->vertexCount = vertexCountIn + isClosed;
+			vertices.clear();
+			vertices.reserve(vertexCount);
+			const float dh = 1.0f / vertexCountIn;
+			float t = 0.0f;
+			for (int i = 0; i < vertexCountIn; ++i, t += dh) {
+				vertices.push_back(f(t));
+			}
+			if (isClosed) {
+				vertices.push_back(vertices[0]);
+			}
+		}
+
+		int getVertexCount() const override {
+			return vertexCount;
+		}
+
+		const glm::vec3* getVertices() const override {
+			return vertices.data();
+		}
+	private:
+		int vertexCount;
+		std::vector<glm::vec3> vertices;
+	};
+
+	glm::vec3 circleEquation(float t);
+	glm::vec3 squareEquation(float t);
 
 	class Morph2D {
 	public:
 		Morph2D() = default;
 		Morph2D(const Morph2D&) = delete;
 		Morph2D& operator=(const Morph2D&) = delete;
-		Morph2D(Morph2D&& other) noexcept : 
-			vao(std::move(other.vao)),
-			vertexBuffer(std::move(other.vertexBuffer)),
-			vertexCount(other.vertexCount)
-		{ }
-		Morph2D& operator=(Morph2D&& other) noexcept {
-			freeMem();
-			vao = std::move(other.vao);
-			vertexBuffer = std::move(other.vertexBuffer);
-			vertexCount = other.vertexCount;
-		}
-
-		EC::ErrorCode init(const Morphable2D& start, const Morphable2D& end) {
-			vertexCount = std::max(start.getVertexCount(), end.getVertexCount());
-			std::vector<glm::vec3> data(vertexCount * 2);
-			const int startVerts = start.getVertexCount();
-			const int endVerts = end.getVertexCount();
-			for (int i = 0, idx = 0; i < vertexCount; ++i, idx += 2) {
-				if (startVerts > endVerts) {
-					const glm::vec3& s = start.getVertices()[i];
-					data[idx] = s;
-					data[idx + 1] = end.getClosestVertex(s);
-				} else if (endVerts > startVerts) {
-					const glm::vec3& currentVert = end.getVertices()[i];
-					data[idx] = start.getClosestVertex(currentVert);
-					data[idx + 1] = currentVert;
-				} else {
-					data[idx] = start.getVertices()[i];
-					data[idx + 1] = end.getVertices()[i];
-				}
-			}
-
-
-			GLUtils::BufferLayout layout;
-			layout.addAttribute(GLUtils::VertexType::Float, 3);
-			layout.addAttribute(GLUtils::VertexType::Float, 3);
-
-			RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
-			RETURN_ON_ERROR_CODE(vao.init());
-			RETURN_ON_ERROR_CODE(vao.bind());
-			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
-			RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
-			RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
-			RETURN_ON_ERROR_CODE(vao.unbind());
-			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
-			const int64_t dataByteSize = data.size() * sizeof(glm::vec3);
-			RETURN_ON_ERROR_CODE(vertexBuffer.upload(dataByteSize, (void*)data.data()));
-			RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
-
-			return EC::ErrorCode();
-		}
-
-		void freeMem() {
-			vao.freeMem();
-			vertexBuffer.freeMem();
-		}
-
-		EC::ErrorCode draw() const {
-			RETURN_ON_ERROR_CODE(vao.bind());
-			RETURN_ON_GL_ERROR(glLineWidth(2));
-			RETURN_ON_GL_ERROR(glDrawArrays(GL_LINE_STRIP, 0, vertexCount));
-			RETURN_ON_ERROR_CODE(vao.unbind());
-			return EC::ErrorCode();
-		}
+		Morph2D(Morph2D&& other) noexcept;
+		Morph2D& operator=(Morph2D&& other) noexcept;
+		EC::ErrorCode init(const Morphable2D& start, const Morphable2D& end);
+		void freeMem();
+		EC::ErrorCode draw() const;
 	private:
 		GLUtils::VAO vao;
 		GLUtils::Buffer vertexBuffer;
 		int vertexCount;
 	};
-
-	class Circle : public Morphable2D {
-	public:
-		Circle(int numVerts, float radius) : vertices(numVerts + 1), radius(radius) {
-			const float dt = 2 * PI / numVerts;
-			float t = 0;
-			for (int i = 0; i < numVerts; ++i) {
-				vertices[i] = glm::vec3(radius * std::cos(t), radius * std::sin(t), 1);
-				t += dt;
-			}
-			vertices[numVerts] = vertices[0];
-		}
-		int getVertexCount() const override {
-			return vertices.size();
-		}
-
-		glm::vec3 getClosestVertex(const glm::vec3& point) const override {
-			int closestIndex = 0;
-			float minDist = glm::distance(point, vertices[0]);
-			for (int i = 1; i < vertices.size(); ++i) {
-				const float dist = glm::distance(point, vertices[i]);
-				if (dist < minDist) {
-					minDist = dist;
-					closestIndex = i;
-				}
-			}
-			return vertices[closestIndex];
-		}
-
-		const glm::vec3* getVertices() const override {
-			return vertices.data();
-		}
-	private:
-		std::vector<glm::vec3> vertices;
-		float radius;
-	};
-
-	class Rectangle : public Morphable2D {
-	public:
-		Rectangle(const glm::vec3& lowLeft, const glm::vec3& upRight) {
-			assert(lowLeft.z == upRight.z);
-			vertices[0] = lowLeft;
-			vertices[1] = glm::vec3(upRight.x, lowLeft.y, lowLeft.z);
-			vertices[2] = upRight;
-			vertices[3] = glm::vec3(lowLeft.x, upRight.y, upRight.z);
-		}
-
-		int getVertexCount() const override {
-			return vertices.size();
-		}
-
-		glm::vec3 getClosestVertex(const glm::vec3& point) const override {
-			int closestIndex = 0;
-			float minDist = glm::distance(point, vertices[0]);
-			for (int i = 1; i < vertices.size(); ++i) {
-				const float dist = glm::distance(point, vertices[i]);
-				if (dist < minDist) {
-					minDist = dist;
-					closestIndex = i;
-				}
-			}
-			return vertices[closestIndex];
-		}
-
-		const glm::vec3* getVertices() const override {
-			return vertices.data();
-		}
-	private:
-		std::array<glm::vec3, 4> vertices;
-	};
-
 }
