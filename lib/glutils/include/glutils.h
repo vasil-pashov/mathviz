@@ -14,7 +14,7 @@ namespace GLUtils {
 	#define RETURN_ON_GL_ERROR(GLCall) \
 	{ \
 		GLCall; \
-		const EC::ErrorCode err = checkGLError(); \
+		const EC::ErrorCode err = GLUtils::checkGLError(); \
 		if (err.hasError()) { \
 			return err; \
 		} \

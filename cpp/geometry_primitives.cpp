@@ -1,8 +1,8 @@
-#include "primitives.h"
+#include "geometry_primitives.h"
 #include "error_code.h"
 #include <array>
 
-namespace GLUtils {
+namespace MathViz {
 	EC::ErrorCode Line::init(const glm::vec3& start, const glm::vec3& end, float width) {
 		this->start = start;
 		this->end = end;
@@ -43,7 +43,7 @@ namespace GLUtils {
 	EC::ErrorCode Plot2D::upload() {
 		RETURN_ON_ERROR_CODE(plotVertexBuffer.upload(sizeof(glm::vec3) * n, nullptr));
 		void* mapped;
-		RETURN_ON_ERROR_CODE(plotVertexBuffer.map(mapped, BufferAccessType::Write));
+		RETURN_ON_ERROR_CODE(plotVertexBuffer.map(mapped, GLUtils::BufferAccessType::Write));
 		
 		float maxHeight = f(xRange.from);
 		float minHeight = maxHeight;

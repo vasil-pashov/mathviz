@@ -19,11 +19,47 @@ add_subdirectory(vendor/glfw)
 
 set(CPP
 	cpp/main.cpp
-	cpp/primitives.cpp
+	cpp/geometry_primitives.cpp
+	cpp/context.cpp
+	cpp/material.cpp
 )
 set(HEADERS
-	include/primitives.h
+	include/geometry_primitives.h
+	include/context.h
+	include/material.h
 )
+
+set(GLOBAL_SHADER_PATHS)
+set(GLOBAL_SHADER_ENUMS)
+function(register_shader shader_path enum_name)
+	list(APPEND GLOBAL_SHADER_PATHS ${shader_path})
+	set(GLOBAL_SHADER_PATHS ${GLOBAL_SHADER_PATHS} PARENT_SCOPE)
+
+	list(APPEND GLOBAL_SHADER_ENUMS ${enum_name})
+	set(GLOBAL_SHADER_ENUMS ${GLOBAL_SHADER_ENUMS} PARENT_SCOPE)
+endfunction()
+
+function(create_shader_manifest)
+	set(first_enum TRUE)
+	set(shader_table_enum "enum ShaderTable {\n")
+	foreach(shader_enum ${GLOBAL_SHADER_ENUMS})
+		if(${first_enum})
+			string(APPEND shader_table_enum "\t\t${shader_enum} = 0,\n")
+			set(first_enum FALSE)
+		else()
+			string(APPEND shader_table_enum "\t\t${shader_enum},\n")
+		endif()
+	endforeach()
+	string(APPEND shader_table_enum "\t\tCount\n\t};\n")
+
+	set(shader_paths_array "inline const char* shaderPaths[ShaderTable::Count] = {\n")
+	foreach(shader_path ${GLOBAL_SHADER_PATHS})
+		string(APPEND shader_paths_array "\t\t\"${shader_path}\",\n")
+	endforeach()
+	string(APPEND shader_paths_array "\t};\n")
+	configure_file(cmake/template/shader_bindings.h.in generated/include/shader_bindings.h @ONLY)
+	target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/generated/include)
+endfunction()
 
 add_executable(${PROJECT_NAME} ${CPP} ${HEADERS})
 target_link_libraries(${PROJECT_NAME} PRIVATE glutils glfw error_code)
@@ -36,18 +72,18 @@ target_include_directories(${PROJECT_NAME} PRIVATE include)
 # to do it at this point.
 file(GLOB_RECURSE ASSETS ${PROJECT_SOURCE_DIR}/assets/*)
 add_custom_command(
-	OUTPUT assets/assets.stamp
+	OUTPUT assets.stamp
 	DEPENDS "${ASSETS}"
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 			${CMAKE_SOURCE_DIR}/assets
-			$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets
-	COMMAND ${CMAKE_COMMAND} -E touch assets/assets.stamp
-	COMMENT "Copy assets to build directory"
+			${CMAKE_CURRENT_BINARY_DIR}/assets
+	COMMAND ${CMAKE_COMMAND} -E touch assets.stamp
+	COMMENT "Copy assets to build directory ${CMAKE_CURRENT_BINARY_DIR}/assets"
 )
 
 add_custom_target(
 	prepare_assets ALL
-	DEPENDS assets/assets.stamp
+	DEPENDS assets.stamp
 )
 
 if(MSVC)
@@ -61,3 +97,8 @@ if(MSVC)
 else()
   target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
+
+register_shader("assets/shaders/flat_color.glsl" "FlatColor")
+register_shader("/assets/shaders/morph.glsl" "Morph")
+create_shader_manifest()
+
