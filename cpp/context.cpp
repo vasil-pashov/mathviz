@@ -10,6 +10,7 @@
 #include "shader_bindings.h"
 
 namespace MathViz {
+
 	static inline void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 		Context* ctx = static_cast<Context*>(glfwGetWindowUserPointer(window));
 		ctx->onResize(width, height);

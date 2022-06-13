@@ -3,6 +3,31 @@
 #include <array>
 
 namespace MathViz {
+
+	Line::Line() : start{0.0f, 0.0f, 0.0f}, end{0.0f, 0.0f, 0.0f}, width(0) {}
+
+	Line::Line(Line&& other) noexcept :
+		start(other.start),
+		end(other.end),
+		vertexBuffer(std::move(other.vertexBuffer)),
+		vao(std::move(vao)),
+		width(other.width) {
+
+	}
+
+	Line& Line::operator=(Line&& other) noexcept {
+		vertexBuffer = std::move(other.vertexBuffer);
+		vao = std::move(other.vao);
+		width = other.width;
+		start = other.start;
+		end = other.end;
+		return *this;
+	}
+
+	Line::~Line() {
+		freeMem();
+	}
+
 	EC::ErrorCode Line::init(const glm::vec3& start, const glm::vec3& end, float width) {
 		this->start = start;
 		this->end = end;
@@ -38,6 +63,11 @@ namespace MathViz {
 		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINES, 0, 2));
 		RETURN_ON_ERROR_CODE(vao.unbind());
 		return EC::ErrorCode();
+	}
+
+	void Line::freeMem() {
+		vertexBuffer.freeMem();
+		vao.freeMem();
 	}
 
 	Axes::Axes() : xRange{0, 0}, yRange{0, 0}, lineVertexCount{0}

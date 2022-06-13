@@ -31,28 +31,19 @@ namespace MathViz {
 
 	constexpr float PI = 3.141592653589793f;
 
-	/// @brief A straight line
-	class Line {
+	class IGeometry {
 	public:
-		Line() : start{0.0f, 0.0f, 0.0f}, end{0.0f, 0.0f, 0.0f}, width(0) {}
-		Line(Line&& other) noexcept :
-			start(other.start),
-			end(other.end),
-			vertexBuffer(std::move(other.vertexBuffer)),
-			vao(std::move(vao)),
-			width(other.width)
-		{
+		virtual ~IGeometry() {}
+		virtual EC::ErrorCode draw() const = 0;
+	};
 
-		}
-
-		Line& operator=(Line&& other) noexcept {
-			vertexBuffer = std::move(other.vertexBuffer);
-			vao = std::move(other.vao);
-			width = other.width;
-			start = other.start;
-			end = other.end;
-			return *this;
-		}
+	/// @brief A straight line
+	class Line : public IGeometry {
+	public:
+		Line();
+		Line(Line&& other) noexcept;
+		Line& operator=(Line&& other) noexcept;
+		~Line();
 		/// @brief Inititialize the line
 		/// @param start The start of the line in world space
 		/// @param end The end of the line in world space
@@ -64,10 +55,7 @@ namespace MathViz {
 		EC::ErrorCode upload();
 		/// @brief Issue a draw call. Must be called only after init and upload are called. 
 		EC::ErrorCode draw() const;
-		void freeMem() {
-			vertexBuffer.freeMem();
-			vao.freeMem();
-		}
+		void freeMem();
 	private:
 		/// The start of the line in world space
 		glm::vec3 start;
@@ -78,7 +66,7 @@ namespace MathViz {
 		float width;
 	};
 
-	class Axes {
+	class Axes : public IGeometry {
 	public:
 		Axes();
 		EC::ErrorCode init(
@@ -99,7 +87,7 @@ namespace MathViz {
 
 	/// @brief Create a curve following a 2D plot.
 	/// Each x coordinate in world space will corelate to a y coordinate in world space.
-	class Plot2D {
+	class Plot2D : public IGeometry {
 	public:
 		Plot2D();
 		/// @brief Initialize the curve
@@ -155,7 +143,7 @@ namespace MathViz {
 		int n;
 	};
 
-	class ReimanArea {
+	class ReimanArea : public IGeometry {
 	public:
 		ReimanArea();
 		template<typename FuncT>
@@ -206,7 +194,7 @@ namespace MathViz {
 		int vertexCount;
 	};
 
-	class Canvas {
+	class Canvas : public IGeometry {
 	public:
 		Canvas();
 		EC::ErrorCode init(const glm::vec3& lowLeft, const glm::vec3& upRight);
@@ -264,7 +252,7 @@ namespace MathViz {
 	glm::vec3 circleEquation(float t);
 	glm::vec3 squareEquation(float t);
 
-	class Morph2D {
+	class Morph2D : public IGeometry {
 	public:
 		Morph2D() = default;
 		Morph2D(const Morph2D&) = delete;
