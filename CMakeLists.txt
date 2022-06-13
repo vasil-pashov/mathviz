@@ -21,10 +21,12 @@ set(CPP
 	cpp/main.cpp
 	cpp/geometry_primitives.cpp
 	cpp/context.cpp
+	cpp/material.cpp
 )
 set(HEADERS
 	include/geometry_primitives.h
 	include/context.h
+	include/material.h
 )
 
 set(GLOBAL_SHADER_PATHS)
