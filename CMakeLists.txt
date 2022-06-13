@@ -52,7 +52,7 @@ function(create_shader_manifest)
 	endforeach()
 	string(APPEND shader_table_enum "\t\tCount\n\t};\n")
 
-	set(shader_paths_array "const char* shaderPaths[ShaderTable::Count] = {\n")
+	set(shader_paths_array "inline const char* shaderPaths[ShaderTable::Count] = {\n")
 	foreach(shader_path ${GLOBAL_SHADER_PATHS})
 		string(APPEND shader_paths_array "\t\t\"${shader_path}\",\n")
 	endforeach()
