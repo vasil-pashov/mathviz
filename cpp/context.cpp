@@ -63,6 +63,7 @@ namespace MathViz {
 	}
 
 	void Context::freeMem() {
+		shaderPrograms.clear();
 		window.reset();
 		glfwTerminate();
 	}
@@ -80,10 +81,17 @@ namespace MathViz {
 		MathViz::ReimanArea r;
 		RETURN_ON_ERROR_CODE(r.init(f, xRange, 0.1));
 
-		MathViz::Circle c(100, 5);
-		MathViz::Rectangle rect(glm::vec3(-5.f, -5.f, 1.0f), glm::vec3(5.f, 5.f, 1.0f));
-		MathViz::Morph2D morph;
-		morph.init(rect, c);
+		const int morphVerts = 100;
+
+		MathViz::Curve circle;
+		circle.init(MathViz::circleEquation, morphVerts, MathViz::Curve::IsClosed);
+
+		MathViz::Curve rect;
+		rect.init(MathViz::squareEquation, morphVerts, MathViz::Curve::IsClosed);
+
+		MathViz::Morph2D morph1, morph2;
+		morph1.init(circle, rect);
+		morph2.init(rect, circle);
 
 		const float fov = 45.0f;
 
@@ -99,14 +107,14 @@ namespace MathViz {
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
 
-			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::FlatColor].bind());
-			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::FlatColor].setUniform("projection", ortho, false));
-			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::FlatColor].setUniform("view", view, false));
-			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::FlatColor].setUniform("color", glm::vec3(0.5f, 0.5f, 0.f)));
-			RETURN_ON_ERROR_CODE(plot.draw());
+			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::Morph].bind());
+			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::Morph].setUniform("projection", ortho, false));
+			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::Morph].setUniform("view", view, false));
+			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::Morph].setUniform("color", glm::vec3(0.5f, 0.5f, 0.f)));
+			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::Morph].setUniform("lerpCoeff", std::min(float(glfwGetTime()) / 5.0f, 1.0f)));
 
-			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::FlatColor].setUniform("color", glm::vec3(0.2f, 0.7f, 3.f)));
-			RETURN_ON_ERROR_CODE(r.draw());
+			morph1.draw();
+			morph2.draw();
 			shaderPrograms[ShaderTable::FlatColor].unbind();
 
 			glfwSwapBuffers(window.get());

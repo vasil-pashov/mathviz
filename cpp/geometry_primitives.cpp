@@ -195,4 +195,86 @@ namespace MathViz {
 		RETURN_ON_ERROR_CODE(vao.unbind());
 		return EC::ErrorCode();
 	}
+
+	glm::vec3 circleEquation(float t) {
+		t *= 2 * PI;
+		return {std::cos(t), std::sin(t), 0.0f};
+	}
+
+	glm::vec3 squareEquation(float t) {
+		float x = 0, y = 0;
+		if (t < 0.25) {
+			x = -0.5 + t * 4;
+			y = -0.5;
+		} else if (0.25 <= t && t < 0.5) {
+			x = 0.5;
+			y = -0.5 + (t - 0.25) * 4;
+		} else if (0.5 <= t && t < 0.75) {
+			x = 0.5 - (t - 0.5) * 4;
+			y = 0.5;
+		} else if (0.75f <= t && t <= 1) {
+			x = -0.5;
+			y = 0.5 - (t - 0.75f) * 4;
+		} else {
+			assert(false);
+		}
+		return {x, y, 0.0f};
+	}
+
+	Morph2D::Morph2D(Morph2D&& other) noexcept :
+		vao(std::move(other.vao)),
+		vertexBuffer(std::move(other.vertexBuffer)),
+		vertexCount(other.vertexCount)
+	{ }
+
+	Morph2D& Morph2D::operator=(Morph2D&& other) noexcept {
+		freeMem();
+		vao = std::move(other.vao);
+		vertexBuffer = std::move(other.vertexBuffer);
+		vertexCount = other.vertexCount;
+		return *this;
+	}
+
+	EC::ErrorCode Morph2D::init(const Morphable2D& start, const Morphable2D& end) {
+		vertexCount = std::max(start.getVertexCount(), end.getVertexCount());
+		std::vector<glm::vec3> data(vertexCount * 2);
+		const int startVerts = start.getVertexCount();
+		const int endVerts = end.getVertexCount();
+		for (int i = 0, idx = 0; i < vertexCount; ++i, idx += 2) {
+			data[idx] = start.getVertices()[i];
+			data[idx + 1] = end.getVertices()[i];
+		}
+
+
+		GLUtils::BufferLayout layout;
+		layout.addAttribute(GLUtils::VertexType::Float, 3);
+		layout.addAttribute(GLUtils::VertexType::Float, 3);
+
+		RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
+		RETURN_ON_ERROR_CODE(vao.init());
+		RETURN_ON_ERROR_CODE(vao.bind());
+		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
+		RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
+		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+		RETURN_ON_ERROR_CODE(vao.unbind());
+		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
+		const int64_t dataByteSize = data.size() * sizeof(glm::vec3);
+		RETURN_ON_ERROR_CODE(vertexBuffer.upload(dataByteSize, (void*)data.data()));
+		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+
+		return EC::ErrorCode();
+	}
+
+	void Morph2D::freeMem() {
+		vao.freeMem();
+		vertexBuffer.freeMem();
+	}
+
+	EC::ErrorCode Morph2D::draw() const {
+		RETURN_ON_ERROR_CODE(vao.bind());
+		RETURN_ON_GL_ERROR(glLineWidth(2));
+		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINE_STRIP, 0, vertexCount));
+		RETURN_ON_ERROR_CODE(vao.unbind());
+		return EC::ErrorCode();
+	}
 }
