@@ -19,7 +19,9 @@ namespace MathViz {
 		[[nodiscard]]
 		EC::ErrorCode mainLoop();
 	private:
+		EC::ErrorCode loadShaders();
 		std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window;
+		std::vector<GLUtils::Program> shaderPrograms;
 		int width;
 		int height;
 	};

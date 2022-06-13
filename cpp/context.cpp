@@ -17,6 +17,7 @@ namespace MathViz {
 
 	Context::Context() :
 		window(nullptr, &glfwDestroyWindow),
+		shaderPrograms(ShaderTable::Count),
 		width(0),
 		height(0)
 	{ }
@@ -45,6 +46,9 @@ namespace MathViz {
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 			return EC::ErrorCode("Failed to initialize GLAD");
 		}
+
+		RETURN_ON_ERROR_CODE(loadShaders());
+
 		RETURN_ON_GL_ERROR(glEnable(GL_LINE_SMOOTH));
 		RETURN_ON_GL_ERROR(glHint(GL_LINE_SMOOTH_HINT, GL_NICEST));
 		return EC::ErrorCode();
@@ -64,13 +68,6 @@ namespace MathViz {
 	}
 
 	EC::ErrorCode Context::mainLoop() {
-		GLUtils::Pipeline morphPipeline, plotPipeline;
-		GLUtils::Program morphProgram, plotProgram;
-		RETURN_ON_ERROR_CODE(morphPipeline.init("\\assets\\shaders\\line_morph.glsl"));
-		RETURN_ON_ERROR_CODE(plotPipeline.init("\\assets\\shaders\\flat_color.glsl"));
-		RETURN_ON_ERROR_CODE(morphProgram.init(morphPipeline));
-		RETURN_ON_ERROR_CODE(plotProgram.init(plotPipeline));
-
 		MathViz::Plot2D plot;
 		const MathViz::Range2D xRange(-5, 5);
 		const MathViz::Range2D yRange(-1, 1);
@@ -102,19 +99,29 @@ namespace MathViz {
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
 
-			RETURN_ON_ERROR_CODE(plotProgram.bind());
-			RETURN_ON_ERROR_CODE(plotProgram.setUniform("projection", ortho, false));
-			RETURN_ON_ERROR_CODE(plotProgram.setUniform("view", view, false));
-			RETURN_ON_ERROR_CODE(plotProgram.setUniform("color", glm::vec3(0.5f, 0.5f, 0.f)));
+			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::FlatColor].bind());
+			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::FlatColor].setUniform("projection", ortho, false));
+			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::FlatColor].setUniform("view", view, false));
+			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::FlatColor].setUniform("color", glm::vec3(0.5f, 0.5f, 0.f)));
 			RETURN_ON_ERROR_CODE(plot.draw());
 
-			RETURN_ON_ERROR_CODE(plotProgram.setUniform("color", glm::vec3(0.2f, 0.7f, 3.f)));
+			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::FlatColor].setUniform("color", glm::vec3(0.2f, 0.7f, 3.f)));
 			RETURN_ON_ERROR_CODE(r.draw());
-			plotProgram.unbind();
+			shaderPrograms[ShaderTable::FlatColor].unbind();
 
 			glfwSwapBuffers(window.get());
 
 			glfwPollEvents();
+		}
+		return EC::ErrorCode();
+	}
+
+	EC::ErrorCode Context::loadShaders() {
+		for (int i = 0; i < ShaderTable::Count; ++i) {
+			GLUtils::Pipeline pipeline;
+			RETURN_ON_ERROR_CODE(pipeline.init(shaderPaths[i]));
+
+			RETURN_ON_ERROR_CODE(shaderPrograms[i].init(pipeline));
 		}
 		return EC::ErrorCode();
 	}

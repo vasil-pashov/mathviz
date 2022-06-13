@@ -70,18 +70,18 @@ target_include_directories(${PROJECT_NAME} PRIVATE include)
 # to do it at this point.
 file(GLOB_RECURSE ASSETS ${PROJECT_SOURCE_DIR}/assets/*)
 add_custom_command(
-	OUTPUT assets/assets.stamp
+	OUTPUT assets.stamp
 	DEPENDS "${ASSETS}"
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 			${CMAKE_SOURCE_DIR}/assets
-			$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets
-	COMMAND ${CMAKE_COMMAND} -E touch assets/assets.stamp
-	COMMENT "Copy assets to build directory"
+			${CMAKE_CURRENT_BINARY_DIR}/assets
+	COMMAND ${CMAKE_COMMAND} -E touch assets.stamp
+	COMMENT "Copy assets to build directory ${CMAKE_CURRENT_BINARY_DIR}/assets"
 )
 
 add_custom_target(
 	prepare_assets ALL
-	DEPENDS assets/assets.stamp
+	DEPENDS assets.stamp
 )
 
 if(MSVC)
@@ -96,7 +96,7 @@ else()
   target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-register_shader("assets/shaders/float_color.glsl" "FlatColor")
-register_shader("assets/shaders/morph.glsl" "Morph")
+register_shader("assets/shaders/flat_color.glsl" "FlatColor")
+register_shader("/assets/shaders/morph.glsl" "Morph")
 create_shader_manifest()
 
