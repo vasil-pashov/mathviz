@@ -3,9 +3,15 @@ namespace EC {
 	class ErrorCode;
 }
 
+namespace GLUtils {
+	class Program;
+}
+
 struct GLFWwindow;
 
 namespace MathViz {
+	class Node;
+
 	class Context {
 	public:
 		Context();
@@ -20,6 +26,8 @@ namespace MathViz {
 		EC::ErrorCode mainLoop();
 	private:
 		EC::ErrorCode loadShaders();
+		EC::ErrorCode drawNode(const Node& node);
+		EC::ErrorCode setMatrices(const GLUtils::Program& program);
 		std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window;
 		std::vector<GLUtils::Program> shaderPrograms;
 		int width;

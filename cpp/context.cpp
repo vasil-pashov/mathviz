@@ -8,8 +8,14 @@
 #include "error_code.h"
 #include "geometry_primitives.h"
 #include "shader_bindings.h"
+#include "material.h"
 
 namespace MathViz {
+
+	struct Node {
+		IMaterial* material;
+		IGeometry* geometry;
+	};
 
 	static inline void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 		Context* ctx = static_cast<Context*>(glfwGetWindowUserPointer(window));
@@ -18,7 +24,7 @@ namespace MathViz {
 
 	Context::Context() :
 		window(nullptr, &glfwDestroyWindow),
-		shaderPrograms(ShaderTable::Count),
+		shaderPrograms(int(ShaderTable::Count)),
 		width(0),
 		height(0)
 	{ }
@@ -79,8 +85,18 @@ namespace MathViz {
 		plot.init(f, xRange, yRange, 1.0f, 100);
 		plot.upload();
 
+		FlatColor red({1.0f, 0.0f, 0.0f});
+		FlatColor blue({0.0f, 0.0f, 1.0f});
+
+		Node plotNode;
+		plotNode.material = &red;
+		plotNode.geometry = &plot;
+
 		MathViz::ReimanArea r;
 		RETURN_ON_ERROR_CODE(r.init(f, xRange, 0.1));
+		Node reimanNode;
+		reimanNode.material = &blue;
+		reimanNode.geometry = &r;
 
 		const int morphVerts = 100;
 
@@ -97,26 +113,14 @@ namespace MathViz {
 		const float fov = 45.0f;
 
 		const glm::mat4 perspective = glm::perspective(glm::radians(fov), (float)800 / (float)900, 0.1f, 100.0f);
-		const glm::mat4 ortho = glm::ortho(-10.f, 10.f, -10.f, 10.f, -10.f, 10.f);
 
-		const glm::vec3 cameraPos(0.0f, 0.0f, -1.0f);
-		const glm::vec3 lookAtPoint(0.0f, 0.0f, 0.0f);
-		const glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
-		const glm::mat4 view = glm::lookAt(cameraPos, lookAtPoint, cameraUp);
 
 		while (!glfwWindowShouldClose(window.get())) {
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
-
-			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::Morph].bind());
-			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::Morph].setUniform("projection", ortho, false));
-			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::Morph].setUniform("view", view, false));
-			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::Morph].setUniform("color", glm::vec3(0.5f, 0.5f, 0.f)));
-			RETURN_ON_ERROR_CODE(shaderPrograms[ShaderTable::Morph].setUniform("lerpCoeff", std::min(float(glfwGetTime()) / 5.0f, 1.0f)));
-
-			morph1.draw();
-			morph2.draw();
-			shaderPrograms[ShaderTable::FlatColor].unbind();
+			
+			drawNode(plotNode);
+			drawNode(reimanNode);
 
 			glfwSwapBuffers(window.get());
 
@@ -126,12 +130,35 @@ namespace MathViz {
 	}
 
 	EC::ErrorCode Context::loadShaders() {
-		for (int i = 0; i < ShaderTable::Count; ++i) {
+		for (int i = 0; i < int(ShaderTable::Count); ++i) {
 			GLUtils::Pipeline pipeline;
 			RETURN_ON_ERROR_CODE(pipeline.init(shaderPaths[i]));
 
 			RETURN_ON_ERROR_CODE(shaderPrograms[i].init(pipeline));
 		}
+		return EC::ErrorCode();
+	}
+
+	EC::ErrorCode Context::drawNode(const Node& node) {
+		IMaterial::ShaderId shaderId = node.material->getShaderId();
+		const GLUtils::Program& shader = shaderPrograms[shaderId];
+		RETURN_ON_ERROR_CODE(shader.bind());
+		RETURN_ON_ERROR_CODE(node.material->apply(shader));
+		RETURN_ON_ERROR_CODE(node.geometry->draw());
+		RETURN_ON_ERROR_CODE(setMatrices(shader));
+		shader.unbind();
+		return EC::ErrorCode();
+	}
+
+	EC::ErrorCode Context::setMatrices(const GLUtils::Program& program) {
+		const glm::mat4 ortho = glm::ortho(-10.f, 10.f, -10.f, 10.f, -10.f, 10.f);
+
+		const glm::vec3 cameraPos(0.0f, 0.0f, -1.0f);
+		const glm::vec3 lookAtPoint(0.0f, 0.0f, 0.0f);
+		const glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
+		const glm::mat4 view = glm::lookAt(cameraPos, lookAtPoint, cameraUp);
+		RETURN_ON_ERROR_CODE(program.setUniform("projection", ortho, false));
+		RETURN_ON_ERROR_CODE(program.setUniform("view", view, false));
 		return EC::ErrorCode();
 	}
 }

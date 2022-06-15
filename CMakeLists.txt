@@ -41,7 +41,7 @@ endfunction()
 
 function(create_shader_manifest)
 	set(first_enum TRUE)
-	set(shader_table_enum "enum ShaderTable {\n")
+	set(shader_table_enum "enum class ShaderTable {\n")
 	foreach(shader_enum ${GLOBAL_SHADER_ENUMS})
 		if(${first_enum})
 			string(APPEND shader_table_enum "\t\t${shader_enum} = 0,\n")

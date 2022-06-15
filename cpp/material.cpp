@@ -22,6 +22,11 @@ namespace MathViz {
 	}
 
 	FlatColor::ShaderId FlatColor::getShaderId() const {
-		return ShaderTable::FlatColor;
+		return ShaderId(ShaderTable::FlatColor);
+	}
+
+	EC::ErrorCode FlatColor::apply(const GLUtils::Program& p) const {
+		RETURN_ON_ERROR_CODE(p.setUniform("color", color));
+		return EC::ErrorCode();
 	}
 }
