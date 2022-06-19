@@ -27,4 +27,22 @@ namespace MathViz {
 	private:
 		glm::vec3 color;
 	};
+
+	class Gradient2D : public IMaterial {
+	public:
+		Gradient2D();
+		Gradient2D(
+			const glm::vec3& start,
+			const glm::vec3& end,
+			const glm::vec3& col0rStart,
+			const glm::vec3& col0rEnd
+		);
+		ShaderId getShaderId() const override;
+		EC::ErrorCode apply(const GLUtils::Program&) const override;
+	private:
+		glm::vec3 start;
+		glm::vec3 end;
+		glm::vec3 colorStart;
+		glm::vec3 colorEnd;
+	};
 }
