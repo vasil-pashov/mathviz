@@ -87,6 +87,12 @@ namespace MathViz {
 
 		FlatColor red({1.0f, 0.0f, 0.0f});
 		FlatColor blue({0.0f, 0.0f, 1.0f});
+		Gradient2D grad(
+			{-5.f, -1.f, 0.f},
+			{5.f, 1.f, 0.f},
+			{0.1f, 0.4f, 0.7f},
+			{0.f, 0.5f, 0.8}
+		);
 
 		Node plotNode;
 		plotNode.material = &red;
@@ -95,7 +101,7 @@ namespace MathViz {
 		MathViz::ReimanArea r;
 		RETURN_ON_ERROR_CODE(r.init(f, xRange, 0.1));
 		Node reimanNode;
-		reimanNode.material = &blue;
+		reimanNode.material = &grad;
 		reimanNode.geometry = &r;
 
 		const int morphVerts = 100;
@@ -151,7 +157,7 @@ namespace MathViz {
 	}
 
 	EC::ErrorCode Context::setMatrices(const GLUtils::Program& program) {
-		const glm::mat4 ortho = glm::ortho(-10.f, 10.f, -10.f, 10.f, -10.f, 10.f);
+		const glm::mat4 ortho = glm::ortho(-1.f, 1.f, -1.f, 1.f, -1.f, 1.f);
 
 		const glm::vec3 cameraPos(0.0f, 0.0f, -1.0f);
 		const glm::vec3 lookAtPoint(0.0f, 0.0f, 0.0f);

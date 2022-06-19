@@ -52,7 +52,7 @@ function(create_shader_manifest)
 	endforeach()
 	string(APPEND shader_table_enum "\t\tCount\n\t};\n")
 
-	set(shader_paths_array "inline const char* shaderPaths[ShaderTable::Count] = {\n")
+	set(shader_paths_array "inline const char* shaderPaths[int(ShaderTable::Count)] = {\n")
 	foreach(shader_path ${GLOBAL_SHADER_PATHS})
 		string(APPEND shader_paths_array "\t\t\"${shader_path}\",\n")
 	endforeach()
@@ -99,6 +99,7 @@ else()
 endif()
 
 register_shader("assets/shaders/flat_color.glsl" "FlatColor")
-register_shader("/assets/shaders/morph.glsl" "Morph")
+register_shader("assets/shaders/morph.glsl" "Morph")
+register_shader("assets/shaders/gradient_2d.glsl" "Gradient2D")
 create_shader_manifest()
 

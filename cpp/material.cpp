@@ -29,4 +29,35 @@ namespace MathViz {
 		RETURN_ON_ERROR_CODE(p.setUniform("color", color));
 		return EC::ErrorCode();
 	}
+
+	Gradient2D::Gradient2D() :
+		start(0.0f, 0.0f, 0.0f),
+		end(0.0f, 0.0f, 0.0f),
+		colorStart(0.0f, 0.0f, 0.0f),
+		colorEnd(0.0f, 0.0f, 0.0f)
+	{ }
+
+	Gradient2D::Gradient2D(
+		const glm::vec3& start,
+		const glm::vec3& end,
+		const glm::vec3& colorStart,
+		const glm::vec3& colorEnd
+	) :
+		start(start),
+		end(end),
+		colorStart(colorStart),
+		colorEnd(colorEnd)
+	{ }
+
+	Gradient2D::ShaderId Gradient2D::getShaderId() const {
+		return ShaderId(ShaderTable::Gradient2D);
+	}
+
+	EC::ErrorCode Gradient2D::apply(const GLUtils::Program& p) const {
+		RETURN_ON_ERROR_CODE(p.setUniform("start", start));
+		RETURN_ON_ERROR_CODE(p.setUniform("end", end));
+		RETURN_ON_ERROR_CODE(p.setUniform("colorStart", colorStart));
+		RETURN_ON_ERROR_CODE(p.setUniform("colorEnd", colorEnd));
+		return EC::ErrorCode();
+	}
 }
