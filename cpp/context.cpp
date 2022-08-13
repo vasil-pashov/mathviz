@@ -149,7 +149,7 @@ namespace MathViz {
 		IMaterial::ShaderId shaderId = node.material->getShaderId();
 		const GLUtils::Program& shader = shaderPrograms[shaderId];
 		RETURN_ON_ERROR_CODE(shader.bind());
-		RETURN_ON_ERROR_CODE(node.material->apply(shader));
+		RETURN_ON_ERROR_CODE(node.material->setUniforms(shader));
 		RETURN_ON_ERROR_CODE(node.geometry->draw());
 		RETURN_ON_ERROR_CODE(setMatrices(shader));
 		shader.unbind();

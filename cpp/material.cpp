@@ -25,7 +25,7 @@ namespace MathViz {
 		return ShaderId(ShaderTable::FlatColor);
 	}
 
-	EC::ErrorCode FlatColor::apply(const GLUtils::Program& p) const {
+	EC::ErrorCode FlatColor::setUniforms(const GLUtils::Program& p) const {
 		RETURN_ON_ERROR_CODE(p.setUniform("color", color));
 		return EC::ErrorCode();
 	}
@@ -53,7 +53,7 @@ namespace MathViz {
 		return ShaderId(ShaderTable::Gradient2D);
 	}
 
-	EC::ErrorCode Gradient2D::apply(const GLUtils::Program& p) const {
+	EC::ErrorCode Gradient2D::setUniforms(const GLUtils::Program& p) const {
 		RETURN_ON_ERROR_CODE(p.setUniform("start", start));
 		RETURN_ON_ERROR_CODE(p.setUniform("end", end));
 		RETURN_ON_ERROR_CODE(p.setUniform("colorStart", colorStart));

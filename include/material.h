@@ -13,7 +13,7 @@ namespace MathViz {
 		virtual ~IMaterial() {
 		}
 		virtual ShaderId getShaderId() const = 0;
-		virtual EC::ErrorCode apply(const GLUtils::Program&) const = 0;
+		virtual EC::ErrorCode setUniforms(const GLUtils::Program&) const = 0;
 	};
 
 	class FlatColor : public IMaterial {
@@ -23,7 +23,7 @@ namespace MathViz {
 		void setColor(const glm::vec3& color);
 		glm::vec3 getColor() const;
 		ShaderId getShaderId() const override;
-		EC::ErrorCode apply(const GLUtils::Program&) const override;
+		EC::ErrorCode setUniforms(const GLUtils::Program&) const override;
 	private:
 		glm::vec3 color;
 	};
@@ -38,7 +38,7 @@ namespace MathViz {
 			const glm::vec3& col0rEnd
 		);
 		ShaderId getShaderId() const override;
-		EC::ErrorCode apply(const GLUtils::Program&) const override;
+		EC::ErrorCode setUniforms(const GLUtils::Program&) const override;
 	private:
 		glm::vec3 start;
 		glm::vec3 end;
