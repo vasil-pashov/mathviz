@@ -11,6 +11,8 @@ namespace EC {
 
 namespace MathViz {
 
+	struct IMaterial;
+
 	struct Range2D {
 		Range2D() : from(0), to(0) {}
 		Range2D(float from, float to) : from(from), to(to) {
@@ -35,6 +37,9 @@ namespace MathViz {
 	public:
 		virtual ~IGeometry() {}
 		virtual EC::ErrorCode draw() const = 0;
+		virtual EC::ErrorCode outline(const IMaterial& objectMaterial, const IMaterial& outlineMaterial) {
+			return EC::ErrorCode("Not implemented");
+		}
 	};
 
 	/// @brief A straight line
@@ -54,7 +59,7 @@ namespace MathViz {
 		/// @brief Upload the geometry to the GPU. Must be called after init.
 		EC::ErrorCode upload();
 		/// @brief Issue a draw call. Must be called only after init and upload are called. 
-		EC::ErrorCode draw() const;
+		EC::ErrorCode draw() const override;
 		void freeMem();
 	private:
 		/// The start of the line in world space
@@ -74,7 +79,7 @@ namespace MathViz {
 			const Range2D& yRangeIn,
 			float markDh
 		);
-		EC::ErrorCode draw() const;
+		EC::ErrorCode draw() const override;
 	private:
 		Range2D xRange;
 		Range2D yRange;
@@ -129,7 +134,7 @@ namespace MathViz {
 			return EC::ErrorCode();
 		}
 		EC::ErrorCode upload();
-		EC::ErrorCode draw() const;
+		EC::ErrorCode draw() const override;
 	private:
 		std::function<float(float)> f;
 		GLUtils::Buffer plotVertexBuffer;
@@ -187,7 +192,7 @@ namespace MathViz {
 			return EC::ErrorCode();
 		}
 
-		EC::ErrorCode draw() const;
+		EC::ErrorCode draw() const override;
 	private:
 		GLUtils::VAO vao;
 		GLUtils::Buffer vertexBuffer;
@@ -199,7 +204,7 @@ namespace MathViz {
 		Canvas();
 		EC::ErrorCode init(const glm::vec3& lowLeft, const glm::vec3& upRight);
 		EC::ErrorCode upload();
-		EC::ErrorCode draw() const;
+		EC::ErrorCode draw() const override;
 	private:
 		glm::vec3 lowLeft;
 		glm::vec3 upRight;
@@ -261,7 +266,7 @@ namespace MathViz {
 		Morph2D& operator=(Morph2D&& other) noexcept;
 		EC::ErrorCode init(const Morphable2D& start, const Morphable2D& end);
 		void freeMem();
-		EC::ErrorCode draw() const;
+		EC::ErrorCode draw() const override;
 	private:
 		GLUtils::VAO vao;
 		GLUtils::Buffer vertexBuffer;

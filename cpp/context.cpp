@@ -13,8 +13,14 @@
 namespace MathViz {
 
 	struct Node {
+		enum Flags {
+			None = 0,
+			Outline = 1
+		};
 		IMaterial* material;
+		IMaterial* outlineMaterial;
 		IGeometry* geometry;
+		unsigned int flags;
 	};
 
 	static inline void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
