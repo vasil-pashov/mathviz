@@ -13,6 +13,7 @@
 namespace MathViz {
 
 	struct Node {
+		Node() : flags(0){ }
 		enum Flags {
 			None = 0,
 			Outline = 1
@@ -66,6 +67,7 @@ namespace MathViz {
 		RETURN_ON_GL_ERROR(glHint(GL_LINE_SMOOTH_HINT, GL_NICEST));
 
 		RETURN_ON_GL_ERROR(glEnable(GL_DEPTH_TEST));
+		RETURN_ON_GL_ERROR(glEnable(GL_STENCIL_TEST));
 		return EC::ErrorCode();
 	}
 
@@ -111,6 +113,8 @@ namespace MathViz {
 		Node reimanNode;
 		reimanNode.material = &grad;
 		reimanNode.geometry = &r;
+		reimanNode.outlineMaterial = &red;
+		reimanNode.flags |= Node::Flags::Outline;
 
 		const int morphVerts = 100;
 
@@ -131,9 +135,9 @@ namespace MathViz {
 
 		while (!glfwWindowShouldClose(window.get())) {
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			
-			drawNode(plotNode);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+			// drawNode(plotNode);
 			drawNode(reimanNode);
 
 			glfwSwapBuffers(window.get());
@@ -158,14 +162,18 @@ namespace MathViz {
 		const GLUtils::Program& shader = shaderPrograms[shaderId];
 		RETURN_ON_ERROR_CODE(shader.bind());
 		RETURN_ON_ERROR_CODE(node.material->setUniforms(shader));
-		RETURN_ON_ERROR_CODE(node.geometry->draw());
 		RETURN_ON_ERROR_CODE(setMatrices(shader));
+		if (node.flags & Node::Flags::Outline) {
+			RETURN_ON_ERROR_CODE(node.geometry->outline(*node.material, *node.outlineMaterial));
+		} else {
+			RETURN_ON_ERROR_CODE(node.geometry->draw());
+		}
 		shader.unbind();
 		return EC::ErrorCode();
 	}
 
 	EC::ErrorCode Context::setMatrices(const GLUtils::Program& program) {
-		const glm::mat4 ortho = glm::ortho(-5.f, 5.f, -1.f, 1.f, 0.f, 10.f);
+		const glm::mat4 ortho = glm::ortho(-5.f, 5.f, -5.f, 5.f, -5.f, 5.f);
 
 		const glm::vec3 cameraPos(0.0f, 0.0f, -1.0f);
 		const glm::vec3 lookAtPoint(0.0f, 0.0f, 0.0f);

@@ -8,6 +8,9 @@
 #include "glutils.h"
 #include "context.h"
 
+MathViz::Context ctx;
+
+
 #define EXIT_ON_ERROR_CODE(_Err) \
 { \
 	const EC::ErrorCode& err = _Err; \
@@ -22,7 +25,6 @@ void logError(const char* error, int line) {
 }
 
 int main() {
-	MathViz::Context ctx;
 	EXIT_ON_ERROR_CODE(ctx.init(800, 900));
 	EXIT_ON_ERROR_CODE(ctx.mainLoop());
 }

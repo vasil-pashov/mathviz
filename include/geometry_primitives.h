@@ -37,7 +37,7 @@ namespace MathViz {
 	public:
 		virtual ~IGeometry() {}
 		virtual EC::ErrorCode draw() const = 0;
-		virtual EC::ErrorCode outline(const IMaterial& objectMaterial, const IMaterial& outlineMaterial) {
+		virtual EC::ErrorCode outline(const IMaterial& objectMaterial, const IMaterial& outlineMaterial) const {
 			return EC::ErrorCode("Not implemented");
 		}
 	};
@@ -153,31 +153,44 @@ namespace MathViz {
 		ReimanArea();
 		template<typename FuncT>
 		EC::ErrorCode init(FuncT&& f, const Range2D& xRange, float dh) {
-			const int barsCount = int(xRange.getLength() / dh);
-			const float z = 0.0f;
-			std::vector<glm::vec3> vertices;
-			// Each bar is represented by 2 triangles
-			// each triangle has 3 verts
-			vertices.reserve(barsCount * 6);
+			const int barCount = int(xRange.getLength() / dh);
+			const float z = 1.0f;
+			std::vector<glm::vec3> vertices(barCount * 6 * 2);
+			// Each bar is represented by 2 triangles each triangle has 3 verts
+			// First 6 * barCount verts are the presented Reiman area
+			// Second 6 * barCount verts are slightly scaled and used for outlining
 			float barStart = xRange.from;
-			for (int i = 0; i < barsCount; ++i) {
+			int i = 0, j = 6 * barCount;
+			for (int bar = 0; bar < barCount; ++bar) {
 				const float barMid = barStart + dh / 2;
 				const float barEnd = barStart + dh;
 				const float fAtBarCenter = f(barMid);
 				const float barBottom = fAtBarCenter > 0 ? 0.0f : fAtBarCenter;
 				const float barTop = fAtBarCenter > 0 ? fAtBarCenter : 0.0f;
 
-				vertices.emplace_back(barEnd, barTop, z);
-				vertices.emplace_back(barStart, barTop, z);
-				vertices.emplace_back(barStart, barBottom, z);
+				vertices[i++] = glm::vec3(barEnd, barTop, z); // up right
+				vertices[i++] = glm::vec3(barStart, barTop, z); // up left
+				vertices[i++] = glm::vec3(barStart, barBottom, z); // bottom left
 
-				vertices.emplace_back(barEnd, barTop, z);
-				vertices.emplace_back(barStart, barBottom, z);
-				vertices.emplace_back(barEnd, barBottom, z);
+				vertices[i++] = glm::vec3(barEnd, barTop, z); // up right
+				vertices[i++] = glm::vec3(barStart, barBottom, z); // bottom left
+				vertices[i++] = glm::vec3(barEnd, barBottom, z); // bottom right
+
+				// ===========================================================
+				// ====================== OUTLINE ============================
+				// ===========================================================
+				const float scale = dh * 0.5;
+				vertices[j++] = glm::vec3(barEnd + scale, barTop + scale, z); // up right
+				vertices[j++] = glm::vec3(barStart - scale, barTop + scale, z); // up left
+				vertices[j++] = glm::vec3(barStart - scale, barBottom - scale, z); // bottom left
+
+				vertices[j++] = glm::vec3(barEnd + scale, barTop + scale, z); // up right
+				vertices[j++] = glm::vec3(barStart - scale, barBottom - scale, z); // bottom left
+				vertices[j++] = glm::vec3(barEnd + scale, barBottom - scale, z); // bottom right
 
 				barStart += dh;
 			}
-			vertexCount = vertices.size();
+			vertexCount = vertices.size() / 2;
 			GLUtils::BufferLayout l;
 			l.addAttribute(GLUtils::VertexType::Float, 3);
 			const int64_t byteSize = vertices.size() * sizeof(vertices[0]);
@@ -193,6 +206,7 @@ namespace MathViz {
 		}
 
 		EC::ErrorCode draw() const override;
+		EC::ErrorCode outline(const IMaterial& m, const IMaterial& om) const override;
 	private:
 		GLUtils::VAO vao;
 		GLUtils::Buffer vertexBuffer;

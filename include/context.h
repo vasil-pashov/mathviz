@@ -1,4 +1,5 @@
 #include <memory>
+#include "GLFW/glfw3.h"
 namespace EC {
 	class ErrorCode;
 }
@@ -24,6 +25,9 @@ namespace MathViz {
 		void freeMem();
 		[[nodiscard]]
 		EC::ErrorCode mainLoop();
+		const GLUtils::Program& getProgram(int idx) {
+			return shaderPrograms[idx];
+		}
 	private:
 		EC::ErrorCode loadShaders();
 		EC::ErrorCode drawNode(const Node& node);
