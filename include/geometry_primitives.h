@@ -153,9 +153,9 @@ namespace MathViz {
 		ReimanArea();
 		template<typename FuncT>
 		EC::ErrorCode init(FuncT&& f, const Range2D& xRange, float dh) {
-			const int barCount = int(xRange.getLength() / dh);
+			barCount = int(xRange.getLength() / dh);
 			const float z = 1.0f;
-			std::vector<glm::vec3> vertices(barCount * 6 * 2);
+			std::vector<glm::vec3> vertices(barCount * 14);
 			// Each bar is represented by 2 triangles each triangle has 3 verts
 			// First 6 * barCount verts are the presented Reiman area
 			// Second 6 * barCount verts are slightly scaled and used for outlining
@@ -179,18 +179,31 @@ namespace MathViz {
 				// ===========================================================
 				// ====================== OUTLINE ============================
 				// ===========================================================
-				const float scale = dh * 0.5;
-				vertices[j++] = glm::vec3(barEnd + scale, barTop + scale, z); // up right
-				vertices[j++] = glm::vec3(barStart - scale, barTop + scale, z); // up left
-				vertices[j++] = glm::vec3(barStart - scale, barBottom - scale, z); // bottom left
+				// const float scale = dh * 0.1;
+				// vertices[j++] = glm::vec3(barEnd + scale, barTop + scale, z); // up right
+				// vertices[j++] = glm::vec3(barStart - scale, barTop + scale, z); // up left
+				// vertices[j++] = glm::vec3(barStart - scale, barBottom - scale, z); // bottom left
+				// 
+				// vertices[j++] = glm::vec3(barEnd + scale, barTop + scale, z); // up right
+				// vertices[j++] = glm::vec3(barStart - scale, barBottom - scale, z); // bottom left
+				// vertices[j++] = glm::vec3(barEnd + scale, barBottom - scale, z); // bottom right
 
-				vertices[j++] = glm::vec3(barEnd + scale, barTop + scale, z); // up right
-				vertices[j++] = glm::vec3(barStart - scale, barBottom - scale, z); // bottom left
-				vertices[j++] = glm::vec3(barEnd + scale, barBottom - scale, z); // bottom right
+
+				vertices[j++] = glm::vec3(barEnd, barTop, z); // up right
+				vertices[j++] = glm::vec3(barStart, barTop, z); // up left
+
+				vertices[j++] = glm::vec3(barStart, barTop, z); // up left
+				vertices[j++] = glm::vec3(barStart, barBottom, z); // bottom left
+
+				vertices[j++] = glm::vec3(barStart, barBottom, z); // bottom left
+				vertices[j++] = glm::vec3(barEnd, barBottom, z); // bottom right
+
+				vertices[j++] = glm::vec3(barEnd, barBottom, z); // bottom right
+				vertices[j++] = glm::vec3(barEnd, barTop, z); // up right
 
 				barStart += dh;
 			}
-			vertexCount = vertices.size() / 2;
+			vertexCount = barCount * 6;
 			GLUtils::BufferLayout l;
 			l.addAttribute(GLUtils::VertexType::Float, 3);
 			const int64_t byteSize = vertices.size() * sizeof(vertices[0]);
@@ -211,6 +224,7 @@ namespace MathViz {
 		GLUtils::VAO vao;
 		GLUtils::Buffer vertexBuffer;
 		int vertexCount;
+		int barCount;
 	};
 
 	class Canvas : public IGeometry {

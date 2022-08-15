@@ -183,14 +183,8 @@ namespace MathViz {
 	EC::ErrorCode ReimanArea::outline(const IMaterial& m, const IMaterial& om) const {
 		RETURN_ON_ERROR_CODE(vao.bind());
 
-		RETURN_ON_GL_ERROR(glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE));
-		RETURN_ON_GL_ERROR(glStencilFunc(GL_ALWAYS, 1, 0xFF));
-		RETURN_ON_GL_ERROR(glStencilMask(0xFF));
+		RETURN_ON_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, vertexCount));
 
-		RETURN_ON_GL_ERROR(glDrawArrays(GL_TRIANGLES, 60, 6));
-
-		RETURN_ON_GL_ERROR(glStencilFunc(GL_NOTEQUAL, 1, 0xFF));
-		RETURN_ON_GL_ERROR(glStencilMask(0x00));
 		RETURN_ON_GL_ERROR(glDisable(GL_DEPTH_TEST));
 
 		const GLUtils::Program& p = ctx.getProgram(om.getShaderId());
@@ -198,6 +192,7 @@ namespace MathViz {
 		RETURN_ON_ERROR_CODE(om.setUniforms(p));
 
 		const glm::mat4 ortho = glm::ortho(-5.f, 5.f, -5.f, 5.f, -5.f, 5.f);
+		const glm::mat4 perspective = glm::perspective(glm::radians(60.f), float(800) / float(900), -1.f, 10.f);
 
 		const glm::vec3 cameraPos(0.0f, 0.0f, -1.0f);
 		const glm::vec3 lookAtPoint(0.0f, 0.0f, 0.0f);
@@ -206,11 +201,9 @@ namespace MathViz {
 		RETURN_ON_ERROR_CODE(p.setUniform("projection", ortho, false));
 		RETURN_ON_ERROR_CODE(p.setUniform("view", view, false));
 
-		RETURN_ON_GL_ERROR(glDrawArrays(GL_TRIANGLES, vertexCount + 60, 6));
+		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINES, vertexCount, barCount * 8));
 
 		RETURN_ON_GL_ERROR(glEnable(GL_DEPTH_TEST));
-		RETURN_ON_GL_ERROR(glStencilMask(0xFF));
-		RETURN_ON_GL_ERROR(glStencilFunc(GL_ALWAYS, 0, 0xFF));
 		RETURN_ON_ERROR_CODE(vao.unbind());
 		return EC::ErrorCode();
 	}

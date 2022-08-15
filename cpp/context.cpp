@@ -179,6 +179,7 @@ namespace MathViz {
 		const glm::vec3 lookAtPoint(0.0f, 0.0f, 0.0f);
 		const glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
 		const glm::mat4 view = glm::lookAt(cameraPos, lookAtPoint, cameraUp);
+		const glm::mat4 perspective = glm::perspective(glm::radians(60.f), float(width) / float(height), -10.f, 10.f);
 		RETURN_ON_ERROR_CODE(program.setUniform("projection", ortho, false));
 		RETURN_ON_ERROR_CODE(program.setUniform("view", view, false));
 		return EC::ErrorCode();
