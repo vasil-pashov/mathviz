@@ -498,9 +498,11 @@ namespace GLUtils {
 
 
 	void Program::freeMem() {
-		glDeleteProgram(handle);
-		assert(checkGLError().hasError() == false);
-		handle = 0;
+		if (handle) {
+			glDeleteProgram(handle);
+			assert(checkGLError().hasError() == false);
+			handle = 0;
+		}
 	}
 	// =========================================================
 	// ========================= VAO ===========================

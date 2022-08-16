@@ -1,5 +1,6 @@
 #include <memory>
 #include "GLFW/glfw3.h"
+#include "material.h"
 namespace EC {
 	class ErrorCode;
 }
@@ -25,15 +26,12 @@ namespace MathViz {
 		void freeMem();
 		[[nodiscard]]
 		EC::ErrorCode mainLoop();
-		const GLUtils::Program& getProgram(int idx) {
-			return shaderPrograms[idx];
-		}
 	private:
 		EC::ErrorCode loadShaders();
 		EC::ErrorCode drawNode(const Node& node);
 		EC::ErrorCode setMatrices(const GLUtils::Program& program);
 		std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window;
-		std::vector<GLUtils::Program> shaderPrograms;
+		MaterialFactory materialFactory;
 		int width;
 		int height;
 	};

@@ -31,7 +31,6 @@ namespace MathViz {
 
 	Context::Context() :
 		window(nullptr, &glfwDestroyWindow),
-		shaderPrograms(int(ShaderTable::Count)),
 		width(0),
 		height(0)
 	{ }
@@ -80,7 +79,7 @@ namespace MathViz {
 	}
 
 	void Context::freeMem() {
-		shaderPrograms.clear();
+		materialFactory.freeMem();
 		window.reset();
 		glfwTerminate();
 	}
@@ -95,13 +94,13 @@ namespace MathViz {
 		plot.init(f, xRange, yRange, 1.0f, 100);
 		plot.upload();
 
-		FlatColor red({1.0f, 0.0f, 0.0f});
-		FlatColor blue({0.0f, 0.0f, 1.0f});
-		Gradient2D grad(
-			{-5.f, -1.f, 0.f},
-			{5.f, 1.f, 0.f},
-			{0.1f, 0.4f, 0.7f},
-			{0.f, 0.5f, 0.8}
+		FlatColor red = materialFactory.create<FlatColor>(glm::vec3(1.0f, 0.0f, 0.0f));
+		FlatColor blue = materialFactory.create<FlatColor>(glm::vec3{0.0f, 0.0f, 1.0f});
+		Gradient2D grad = materialFactory.create<Gradient2D>(
+			glm::vec3(-5.f, -1.f, 0.f),
+			glm::vec3(5.f, 1.f, 0.f),
+			glm::vec3(0.1f, 0.4f, 0.7f),
+			glm::vec3(0.f, 0.5f, 0.8)
 		);
 
 		Node plotNode;
@@ -148,27 +147,21 @@ namespace MathViz {
 	}
 
 	EC::ErrorCode Context::loadShaders() {
-		for (int i = 0; i < int(ShaderTable::Count); ++i) {
-			GLUtils::Pipeline pipeline;
-			RETURN_ON_ERROR_CODE(pipeline.init(shaderPaths[i]));
-
-			RETURN_ON_ERROR_CODE(shaderPrograms[i].init(pipeline));
-		}
+		RETURN_ON_ERROR_CODE(materialFactory.init());
 		return EC::ErrorCode();
 	}
 
 	EC::ErrorCode Context::drawNode(const Node& node) {
-		IMaterial::ShaderId shaderId = node.material->getShaderId();
-		const GLUtils::Program& shader = shaderPrograms[shaderId];
-		RETURN_ON_ERROR_CODE(shader.bind());
-		RETURN_ON_ERROR_CODE(node.material->setUniforms(shader));
-		RETURN_ON_ERROR_CODE(setMatrices(shader));
+		const GLUtils::Program& p = node.material->getProgram();
+		RETURN_ON_ERROR_CODE(p.bind());
+		RETURN_ON_ERROR_CODE(node.material->setUniforms());
+		RETURN_ON_ERROR_CODE(setMatrices(p));
 		if (node.flags & Node::Flags::Outline) {
 			RETURN_ON_ERROR_CODE(node.geometry->outline(*node.material, *node.outlineMaterial));
 		} else {
 			RETURN_ON_ERROR_CODE(node.geometry->draw());
 		}
-		shader.unbind();
+		p.unbind();
 		return EC::ErrorCode();
 	}
 
