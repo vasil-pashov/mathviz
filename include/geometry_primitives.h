@@ -66,7 +66,7 @@ namespace MathViz {
 		glm::vec3 start;
 		/// The end of the line in world space
 		glm::vec3 end;
-		GLUtils::Buffer vertexBuffer;
+		GLUtils::VertexBuffer vertexBuffer;
 		GLUtils::VAO vao;
 		float width;
 	};
@@ -84,7 +84,7 @@ namespace MathViz {
 		Range2D xRange;
 		Range2D yRange;
 		GLUtils::VAO vao;
-		GLUtils::Buffer vertexBuffer;
+		GLUtils::VertexBuffer vertexBuffer;
 		/// Used by the draw call. The number of vertices (not lines)
 		/// which will be used to draw the lines
 		int lineVertexCount;
@@ -123,13 +123,13 @@ namespace MathViz {
 			GLUtils::BufferLayout layout;
 			layout.addAttribute(GLUtils::VertexType::Float, 3);
 
-			RETURN_ON_ERROR_CODE(plotVertexBuffer.init(GLUtils::BufferType::Vertex));
-			RETURN_ON_ERROR_CODE(plotVAO.init());
-			RETURN_ON_ERROR_CODE(plotVAO.bind());
-			RETURN_ON_ERROR_CODE(plotVertexBuffer.bind());
-			RETURN_ON_ERROR_CODE(plotVertexBuffer.setLayout(layout));
-			RETURN_ON_ERROR_CODE(plotVertexBuffer.unbind());
-			RETURN_ON_ERROR_CODE(plotVAO.unbind());
+			RETURN_ON_ERROR_CODE(vertexBuffer.init());
+			RETURN_ON_ERROR_CODE(vao.init());
+			RETURN_ON_ERROR_CODE(vao.bind());
+			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
+			RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
+			RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+			RETURN_ON_ERROR_CODE(vao.unbind());
 
 			return EC::ErrorCode();
 		}
@@ -137,8 +137,8 @@ namespace MathViz {
 		EC::ErrorCode draw() const override;
 	private:
 		std::function<float(float)> f;
-		GLUtils::Buffer plotVertexBuffer;
-		GLUtils::VAO plotVAO;
+		GLUtils::VertexBuffer vertexBuffer;
+		GLUtils::VAO vao;
 		/// min and max x coordinate to show on the plot
 		/// points which are outside of the range will not be computed
 		Range2D xRange;
@@ -207,7 +207,7 @@ namespace MathViz {
 			GLUtils::BufferLayout l;
 			l.addAttribute(GLUtils::VertexType::Float, 3);
 			const int64_t byteSize = vertices.size() * sizeof(vertices[0]);
-			RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
+			RETURN_ON_ERROR_CODE(vertexBuffer.init());
 			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
 			RETURN_ON_ERROR_CODE(vao.init());
 			RETURN_ON_ERROR_CODE(vao.bind());
@@ -222,7 +222,7 @@ namespace MathViz {
 		EC::ErrorCode outline(const IMaterial& m, const IMaterial& om) const override;
 	private:
 		GLUtils::VAO vao;
-		GLUtils::Buffer vertexBuffer;
+		GLUtils::VertexBuffer vertexBuffer;
 		int vertexCount;
 		int barCount;
 	};
@@ -236,7 +236,7 @@ namespace MathViz {
 	private:
 		glm::vec3 lowLeft;
 		glm::vec3 upRight;
-		GLUtils::Buffer vertexBuffer;
+		GLUtils::VertexBuffer vertexBuffer;
 		GLUtils::VAO vao;
 	};
 
@@ -297,7 +297,7 @@ namespace MathViz {
 		EC::ErrorCode draw() const override;
 	private:
 		GLUtils::VAO vao;
-		GLUtils::Buffer vertexBuffer;
+		GLUtils::VertexBuffer vertexBuffer;
 		int vertexCount;
 	};
 }

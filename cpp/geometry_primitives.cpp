@@ -11,7 +11,11 @@ extern 	MathViz::Context ctx;
 
 namespace MathViz {
 
-	Line::Line() : start{0.0f, 0.0f, 0.0f}, end{0.0f, 0.0f, 0.0f}, width(0) {}
+	Line::Line() :
+		start{0.0f, 0.0f, 0.0f},
+		end{0.0f, 0.0f, 0.0f},
+		width(0)
+	{ }
 
 	Line::Line(Line&& other) noexcept :
 		start(other.start),
@@ -43,7 +47,7 @@ namespace MathViz {
 		GLUtils::BufferLayout layout;
 		layout.addAttribute(GLUtils::VertexType::Float, 3);
 
-		RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
+		RETURN_ON_ERROR_CODE(vertexBuffer.init());
 		RETURN_ON_ERROR_CODE(vao.init());
 		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
@@ -77,7 +81,10 @@ namespace MathViz {
 		vao.freeMem();
 	}
 
-	Axes::Axes() : xRange{0, 0}, yRange{0, 0}, lineVertexCount{0}
+	Axes::Axes() :
+		xRange{0, 0},
+		yRange{0, 0},
+		lineVertexCount{0}
 	{
 	}
 	EC::ErrorCode Axes::init(
@@ -122,7 +129,7 @@ namespace MathViz {
 		const int64_t byteSize = lineVertices.size() * sizeof(lineVertices[0]);
 		GLUtils::BufferLayout l;
 		l.addAttribute(GLUtils::VertexType::Float, 3);
-		RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
+		RETURN_ON_ERROR_CODE(vertexBuffer.init());
 		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
 		RETURN_ON_ERROR_CODE(vao.init());
 		RETURN_ON_ERROR_CODE(vao.bind());
@@ -140,12 +147,16 @@ namespace MathViz {
 		return EC::ErrorCode();
 	}
 
-	Plot2D::Plot2D() : xRange{0, 0}, yRange{0, 0}, lineWidth{1.0f}, n{0} {}
+	Plot2D::Plot2D() :
+		xRange{0, 0},
+		yRange{0, 0},
+		lineWidth{1.0f},
+		n{0} {}
 
 	EC::ErrorCode Plot2D::upload() {
-		RETURN_ON_ERROR_CODE(plotVertexBuffer.upload(sizeof(glm::vec3) * n, nullptr));
+		RETURN_ON_ERROR_CODE(vertexBuffer.upload(sizeof(glm::vec3) * n, nullptr));
 		void* mapped;
-		RETURN_ON_ERROR_CODE(plotVertexBuffer.map(mapped, GLUtils::BufferAccessType::Write));
+		RETURN_ON_ERROR_CODE(vertexBuffer.map(mapped, GLUtils::BufferAccessType::Write));
 		
 		float maxHeight = f(xRange.from);
 		float minHeight = maxHeight;
@@ -158,20 +169,23 @@ namespace MathViz {
 			const glm::vec3 point(xRange.from + i * dh, y, 0.0f);
 			static_cast<glm::vec3*>(mapped)[i] = point;
 		}
-		RETURN_ON_ERROR_CODE(plotVertexBuffer.unmap());
-		RETURN_ON_ERROR_CODE(plotVertexBuffer.unbind());
+		RETURN_ON_ERROR_CODE(vertexBuffer.unmap());
+		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
 		return EC::ErrorCode();
 	}
 
 	EC::ErrorCode Plot2D::draw() const {
-		RETURN_ON_ERROR_CODE(plotVAO.bind());
+		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_GL_ERROR(glLineWidth(lineWidth));
 		RETURN_ON_GL_ERROR(glDrawArrays(GL_LINE_STRIP, 0, n));
-		RETURN_ON_ERROR_CODE(plotVAO.unbind());
+		RETURN_ON_ERROR_CODE(vao.unbind());
 		return EC::ErrorCode();
 	}
 
-	ReimanArea::ReimanArea() : vertexCount(0){}
+	ReimanArea::ReimanArea() :
+		vertexCount(0),
+		barCount(0)
+	{}
 
 	EC::ErrorCode ReimanArea::draw() const {
 		RETURN_ON_ERROR_CODE(vao.bind());
@@ -208,7 +222,10 @@ namespace MathViz {
 		return EC::ErrorCode();
 	}
 
-	Canvas::Canvas() : lowLeft{0, 0, 0}, upRight{0, 0, 0} {}
+	Canvas::Canvas() :
+		lowLeft{0, 0, 0},
+		upRight{0, 0, 0}
+	{ }
 
 	EC::ErrorCode Canvas::init(const glm::vec3& lowLeft, const glm::vec3& upRight) {
 		this->lowLeft = lowLeft;
@@ -218,7 +235,7 @@ namespace MathViz {
 		layout.addAttribute(GLUtils::VertexType::Float, 3);
 		layout.addAttribute(GLUtils::VertexType::Float, 2);
 
-		RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
+		RETURN_ON_ERROR_CODE(vertexBuffer.init());
 		RETURN_ON_ERROR_CODE(vao.init());
 		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
@@ -315,7 +332,7 @@ namespace MathViz {
 		layout.addAttribute(GLUtils::VertexType::Float, 3);
 		layout.addAttribute(GLUtils::VertexType::Float, 3);
 
-		RETURN_ON_ERROR_CODE(vertexBuffer.init(GLUtils::BufferType::Vertex));
+		RETURN_ON_ERROR_CODE(vertexBuffer.init());
 		RETURN_ON_ERROR_CODE(vao.init());
 		RETURN_ON_ERROR_CODE(vao.bind());
 		RETURN_ON_ERROR_CODE(vertexBuffer.bind());

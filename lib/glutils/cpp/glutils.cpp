@@ -171,13 +171,20 @@ namespace GLUtils {
 		stride += getTypeSize(type) * count;
 	}
 
-	Buffer::Buffer(Buffer&& other) noexcept {
+	BufferBase::BufferBase(BufferType type) :
+		type(convertBufferType(type)),
+		handle(0)
+	{
+
+	}
+
+	BufferBase::BufferBase(BufferBase&& other) noexcept {
 		this->handle = other.handle;
 		this->type = other.type;
 		other.handle = 0;
 	}
 
-	Buffer& Buffer::operator=(Buffer&& other) noexcept {
+	BufferBase& BufferBase::operator=(BufferBase&& other) noexcept {
 		assert(&other != this);
 		freeMem();
 		handle = other.handle;
@@ -187,23 +194,22 @@ namespace GLUtils {
 	}
 
 
-	Buffer::~Buffer() {
+	BufferBase::~BufferBase() {
 		freeMem();
 	}
 
-	EC::ErrorCode Buffer::init(BufferType type) {
+	EC::ErrorCode BufferBase::init() {
 		RETURN_ON_GL_ERROR(glGenBuffers(1, &handle));
-		this->type = convertBufferType(type);
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode Buffer::upload(int64_t size, const void* data) {
+	EC::ErrorCode BufferBase::upload(int64_t size, const void* data) {
 		RETURN_ON_GL_ERROR(glBindBuffer(type, handle));
 		RETURN_ON_GL_ERROR(glBufferData(type, size, data, GL_STATIC_DRAW));
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode Buffer::setLayout(const BufferLayout& layout) {
+	EC::ErrorCode BufferBase::setLayout(const BufferLayout& layout) {
 		RETURN_ON_ERROR_CODE(bind());
 		int offset = 0;
 		for (int i = 0; i < layout.getAttributes().size(); ++i) {
@@ -223,34 +229,81 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
-	void Buffer::freeMem() {
+	void BufferBase::freeMem() {
 		glDeleteBuffers(1, &handle);
 	}
 
-	BufferHandle Buffer::getHandle() const {
+	BufferHandle BufferBase::getHandle() const {
 		return handle;
 	}
 
-	EC::ErrorCode Buffer::bind() const {
+	EC::ErrorCode BufferBase::bind() const {
 		RETURN_ON_GL_ERROR(glBindBuffer(type, handle));
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode Buffer::bind(const int bindingIndex) {
+	EC::ErrorCode BufferBase::bind(const int bindingIndex) {
 		RETURN_ON_GL_ERROR(bind());
 		RETURN_ON_GL_ERROR(glBindBufferBase(type, bindingIndex, handle));
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode Buffer::map(void*& map, BufferAccessType access) const {
+	EC::ErrorCode BufferBase::map(void*& map, BufferAccessType access) const {
 		const GLenum glAccess = convertBufferAccesType(access);
 		glBindBuffer(type, handle);
 		map = glMapBuffer(type, glAccess);
 		return checkGLError();
 	}
 
-	EC::ErrorCode Buffer::unmap() const {
+	EC::ErrorCode BufferBase::unmap() const {
 		RETURN_ON_GL_ERROR(glUnmapBuffer(type));
+		return EC::ErrorCode();
+	}
+
+	EC::ErrorCode BufferBase::unbind() const {
+		RETURN_ON_GL_ERROR(glBindBuffer(type, 0));
+		return EC::ErrorCode();
+	}
+
+	VertexBuffer::VertexBuffer() :
+		BufferBase(BufferType::Vertex)
+	{ }
+
+	IndexBuffer::IndexBuffer() :
+		BufferBase(BufferType::Index) {
+ }
+
+	UniformBuffer::UniformBuffer() noexcept :
+		BufferBase(BufferType::Uniform),
+		bindingPosition(0)
+	{ }
+
+	UniformBuffer::UniformBuffer(unsigned int bindingPosition) noexcept :
+		BufferBase(BufferType::Uniform),
+		bindingPosition(bindingPosition)
+	{ }
+
+	UniformBuffer::UniformBuffer(UniformBuffer&& ub) noexcept :
+		BufferBase(std::move(ub)),
+		bindingPosition(ub.bindingPosition)
+	{
+		ub.bindingPosition = 0;
+	}
+
+	UniformBuffer& UniformBuffer::operator=(UniformBuffer&& ub) noexcept {
+		BufferBase::operator=(std::move(ub));
+		bindingPosition = ub.bindingPosition;
+		ub.bindingPosition = 0;
+		return *this;
+	}
+
+	void UniformBuffer::setBindingPosition(unsigned int bindingPosition) {
+		this->bindingPosition = bindingPosition;
+	}
+
+	EC::ErrorCode UniformBuffer::bind() {
+		RETURN_ON_ERROR_CODE(BufferBase::bind());
+		RETURN_ON_GL_ERROR(glBindBufferBase(type, bindingPosition, handle));
 		return EC::ErrorCode();
 	}
 

@@ -87,18 +87,12 @@ namespace GLUtils {
 	};
 
 	/// Simple opengl buffer wrapper with ability to upload/free data and set layout for the shader
-	class Buffer {
+	class BufferBase {
 	public:
-		Buffer() = default;
-		~Buffer();
-		Buffer(const Buffer&) = delete;
-		Buffer(Buffer&&) noexcept;
-		Buffer& operator=(const Buffer&) = delete;
-		Buffer& operator=(Buffer&&) noexcept;;
+		~BufferBase();
 		/// Initialize the handle to the buffer. Does not allocate GPU memory
-		/// @param[in] type - Type of the buffer e.g. vertex, index, etc...
 		[[nodiscard]]
-		EC::ErrorCode init(BufferType type);
+		EC::ErrorCode init();
 		/// Upload data to the GPU
 		/// @param[in] size - Size in bytes of the data to be uploaded
 		/// @param[in] data - Pointer to the data to be uploaded
@@ -127,15 +121,38 @@ namespace GLUtils {
 		EC::ErrorCode unmap() const;
 		[[nodiscard]]
 		EC::ErrorCode setLayout(const AttributeLayout& layout);
-	private:
+	protected:
+		/// @param[in] type - Type of the buffer e.g. vertex, index
+		BufferBase(BufferType type);
+		BufferBase(const BufferBase&) = delete;
+		BufferBase(BufferBase&&) noexcept;
+		BufferBase& operator=(const BufferBase&) = delete;
+		BufferBase& operator=(BufferBase&&) noexcept;;
 		unsigned int handle;
 		unsigned int type;
 	};
 
-	inline EC::ErrorCode Buffer::unbind() const {
-		RETURN_ON_GL_ERROR(glBindBuffer(type, 0));
-		return EC::ErrorCode();
-	}
+	class VertexBuffer : public BufferBase {
+	public:
+		VertexBuffer();
+	};
+
+	class IndexBuffer : public BufferBase {
+	public:
+		IndexBuffer();
+	};
+
+	class UniformBuffer : public BufferBase {
+	public:
+		UniformBuffer() noexcept;
+		UniformBuffer(unsigned int bindingPosition) noexcept;
+		UniformBuffer(UniformBuffer&&) noexcept;
+		UniformBuffer& operator=(UniformBuffer&&) noexcept;;
+		void setBindingPosition(unsigned int bindingPosition);
+		EC::ErrorCode bind();
+	private:
+		unsigned int bindingPosition;
+	};
 
 	/// Shader type program wrapper
 	enum class ShaderType : short {
