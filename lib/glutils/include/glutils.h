@@ -93,8 +93,9 @@ namespace GLUtils {
 		/// Initialize the handle to the buffer. Does not allocate GPU memory
 		[[nodiscard]]
 		EC::ErrorCode init(int64_t size);
-		EC::ErrorCode init(int64_t size, void* source);
-		EC::ErrorCode init(int64_t size, void* source, const BufferLayout& layout);
+		EC::ErrorCode init(int64_t size, const void* source);
+		EC::ErrorCode init(int64_t size, const void* source, const BufferLayout& layout);
+		EC::ErrorCode upload(int64_t offset, int64_t size, const void* data);
 		/// Upload data to the GPU
 		/// @param[in] size - Size in bytes of the data to be uploaded
 		/// @param[in] data - Pointer to the data to be uploaded
@@ -121,8 +122,6 @@ namespace GLUtils {
 		EC::ErrorCode map(void*& map, BufferAccessType access) const;
 		[[nodiscard]]
 		EC::ErrorCode unmap() const;
-		[[nodiscard]]
-		EC::ErrorCode setLayout(const AttributeLayout& layout);
 	protected:
 		/// @param[in] type - Type of the buffer e.g. vertex, index
 		BufferBase(BufferType type);

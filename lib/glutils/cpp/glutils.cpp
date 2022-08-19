@@ -198,7 +198,7 @@ namespace GLUtils {
 		freeMem();
 	}
 
-	EC::ErrorCode BufferBase::init(int64_t size, void* data, const BufferLayout& layout) {
+	EC::ErrorCode BufferBase::init(int64_t size, const void* data, const BufferLayout& layout) {
 		RETURN_ON_GL_ERROR(glGenBuffers(1, &handle));
 		RETURN_ON_ERROR_CODE(bind());
 		RETURN_ON_GL_ERROR(glBufferData(type, size, data, GL_STATIC_DRAW));
@@ -207,7 +207,7 @@ namespace GLUtils {
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode BufferBase::init(int64_t size, void* data) {
+	EC::ErrorCode BufferBase::init(int64_t size, const void* data) {
 		RETURN_ON_GL_ERROR(glGenBuffers(1, &handle));
 		RETURN_ON_ERROR_CODE(bind());
 		RETURN_ON_GL_ERROR(glBufferData(type, size, data, GL_STATIC_DRAW));
@@ -219,11 +219,12 @@ namespace GLUtils {
 		return init(size, nullptr);
 	}
 
-	// EC::ErrorCode BufferBase::upload(int64_t size, const void* data) {
-	// 	RETURN_ON_GL_ERROR(glBindBuffer(type, handle));
-	// 	RETURN_ON_GL_ERROR(glBufferData(type, size, data, GL_STATIC_DRAW));
-	// 	return EC::ErrorCode();
-	// }
+	EC::ErrorCode BufferBase::upload(int64_t offset, int64_t size, const void* data) {
+		RETURN_ON_GL_ERROR(bind());
+		RETURN_ON_GL_ERROR(glBufferSubData(type, offset, size, data));
+		RETURN_ON_GL_ERROR(unbind());
+		return EC::ErrorCode();
+	}
 
 	EC::ErrorCode BufferBase::setLayout(const BufferLayout& layout) {
 		RETURN_ON_ERROR_CODE(bind());
