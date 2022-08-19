@@ -27,6 +27,10 @@ namespace MathViz {
 		[[nodiscard]]
 		EC::ErrorCode mainLoop();
 	private:
+		enum ReservedUBOBindings {
+			ProjectionView = 0
+		};
+
 		EC::ErrorCode loadShaders();
 		EC::ErrorCode drawNode(const Node& node);
 		EC::ErrorCode setMatrices(const GLUtils::Program& program);
@@ -34,5 +38,10 @@ namespace MathViz {
 		MaterialFactory materialFactory;
 		int width;
 		int height;
+
+		// TODO: Create a camera class
+		glm::mat4 view;
+		glm::mat4 projection;
+		GLUtils::UniformBuffer projectionView;
 	};
 }

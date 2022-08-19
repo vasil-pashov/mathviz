@@ -44,27 +44,19 @@ namespace MathViz {
 		this->end = end;
 		this->width = width;
 
-		GLUtils::BufferLayout layout;
-		layout.addAttribute(GLUtils::VertexType::Float, 3);
-
-		RETURN_ON_ERROR_CODE(vertexBuffer.init());
-		RETURN_ON_ERROR_CODE(vao.init());
-		RETURN_ON_ERROR_CODE(vao.bind());
-		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
-		RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
-		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
-		RETURN_ON_ERROR_CODE(vao.unbind());
-		return EC::ErrorCode();
-	}
-
-	EC::ErrorCode Line::upload() {
 		const std::array<float, 6> data = {
 			start.x, start.y, start.z,
 			end.x, end.y, end.z
 		};
-		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
-		RETURN_ON_ERROR_CODE(vertexBuffer.upload(sizeof(data), (void*)data.data()));
-		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+
+		GLUtils::BufferLayout layout;
+		layout.addAttribute(GLUtils::VertexType::Float, 3);
+
+		RETURN_ON_ERROR_CODE(vao.init());
+		RETURN_ON_ERROR_CODE(vao.bind());
+		RETURN_ON_ERROR_CODE(vertexBuffer.init(sizeof(data), (void*)data.data()), layout);
+		RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
+		RETURN_ON_ERROR_CODE(vao.unbind());
 		return EC::ErrorCode();
 	}
 
@@ -129,13 +121,9 @@ namespace MathViz {
 		const int64_t byteSize = lineVertices.size() * sizeof(lineVertices[0]);
 		GLUtils::BufferLayout l;
 		l.addAttribute(GLUtils::VertexType::Float, 3);
-		RETURN_ON_ERROR_CODE(vertexBuffer.init());
-		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
 		RETURN_ON_ERROR_CODE(vao.init());
 		RETURN_ON_ERROR_CODE(vao.bind());
-		RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(l));
-		RETURN_ON_ERROR_CODE(vertexBuffer.upload(byteSize, lineVertices.data()));
-		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+		RETURN_ON_ERROR_CODE(vertexBuffer.init(byteSize, lineVertices.data(), l));
 		RETURN_ON_ERROR_CODE(vao.unbind());
 		return EC::ErrorCode();
 	}
@@ -154,7 +142,7 @@ namespace MathViz {
 		n{0} {}
 
 	EC::ErrorCode Plot2D::upload() {
-		RETURN_ON_ERROR_CODE(vertexBuffer.upload(sizeof(glm::vec3) * n, nullptr));
+		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
 		void* mapped;
 		RETURN_ON_ERROR_CODE(vertexBuffer.map(mapped, GLUtils::BufferAccessType::Write));
 		
@@ -231,21 +219,6 @@ namespace MathViz {
 		this->lowLeft = lowLeft;
 		this->upRight = upRight;
 
-		GLUtils::BufferLayout layout;
-		layout.addAttribute(GLUtils::VertexType::Float, 3);
-		layout.addAttribute(GLUtils::VertexType::Float, 2);
-
-		RETURN_ON_ERROR_CODE(vertexBuffer.init());
-		RETURN_ON_ERROR_CODE(vao.init());
-		RETURN_ON_ERROR_CODE(vao.bind());
-		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
-		RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
-		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
-
-		return EC::ErrorCode();
-	}
-
-	EC::ErrorCode Canvas::upload() {
 		// (x1, y1)       (x0, y0)
 		// (0, 1)         (1, 1)
 		//      ***********
@@ -265,9 +238,16 @@ namespace MathViz {
 			lowLeft.x, lowLeft.y, lowLeft.z, 0, 0,
 			lowRight.x, lowRight.y, lowRight.z, 1, 0
 		};
-		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
-		RETURN_ON_ERROR_CODE(vertexBuffer.upload(sizeof(data), (void*)data));
-		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+
+		GLUtils::BufferLayout layout;
+		layout.addAttribute(GLUtils::VertexType::Float, 3);
+		layout.addAttribute(GLUtils::VertexType::Float, 2);
+
+		RETURN_ON_ERROR_CODE(vao.init());
+		RETURN_ON_ERROR_CODE(vao.bind());
+		RETURN_ON_ERROR_CODE(vertexBuffer.init(sizeof(data), (void*)data, layout));
+		RETURN_ON_ERROR_CODE(vao.unbind());
+
 		return EC::ErrorCode();
 	}
 
@@ -332,17 +312,12 @@ namespace MathViz {
 		layout.addAttribute(GLUtils::VertexType::Float, 3);
 		layout.addAttribute(GLUtils::VertexType::Float, 3);
 
-		RETURN_ON_ERROR_CODE(vertexBuffer.init());
+		const int64_t dataByteSize = data.size() * sizeof(glm::vec3);
+
 		RETURN_ON_ERROR_CODE(vao.init());
 		RETURN_ON_ERROR_CODE(vao.bind());
-		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
-		RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
-		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+		RETURN_ON_ERROR_CODE(vertexBuffer.init(dataByteSize, (void*)data.data(), layout));
 		RETURN_ON_ERROR_CODE(vao.unbind());
-		RETURN_ON_ERROR_CODE(vertexBuffer.bind());
-		const int64_t dataByteSize = data.size() * sizeof(glm::vec3);
-		RETURN_ON_ERROR_CODE(vertexBuffer.upload(dataByteSize, (void*)data.data()));
-		RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
 
 		return EC::ErrorCode();
 	}

@@ -2,12 +2,18 @@
 #version 330 core
 layout(location = 0) in vec3 startPos;
 layout(location = 1) in vec3 endPos;
+
+layout(std140, binding = 0) uniform ProjectionView
+{
+	mat4 projectionView;
+};
+
 uniform float lerpCoeff;
-uniform mat4 projection;
-uniform mat4 view;
+uniform mat4 model;
+
 void main() {
 	vec3 mixedPos = mix(startPos, endPos, lerpCoeff);
-	gl_Position = projection * view * vec4(mixedPos, 1.0f);
+	gl_Position = projectionView * vec4(mixedPos, 1.0f);
 }
 
 #shader fragment

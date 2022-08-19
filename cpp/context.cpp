@@ -32,7 +32,8 @@ namespace MathViz {
 	Context::Context() :
 		window(nullptr, &glfwDestroyWindow),
 		width(0),
-		height(0)
+		height(0),
+		projectionView(ReservedUBOBindings::ProjectionView)
 	{ }
 
 	Context::~Context() {
@@ -66,7 +67,17 @@ namespace MathViz {
 		RETURN_ON_GL_ERROR(glHint(GL_LINE_SMOOTH_HINT, GL_NICEST));
 
 		RETURN_ON_GL_ERROR(glEnable(GL_DEPTH_TEST));
-		RETURN_ON_GL_ERROR(glEnable(GL_STENCIL_TEST));
+
+		{
+			projection = glm::ortho(-5.f, 5.f, -5.f, 5.f, -5.f, 5.f);
+			const glm::vec3 cameraPos(0.0f, 0.0f, -1.0f);
+			const glm::vec3 lookAtPoint(0.0f, 0.0f, 0.0f);
+			const glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
+			view = glm::lookAt(cameraPos, lookAtPoint, cameraUp);
+			const glm::mat4 pv = projection * view;
+			RETURN_ON_ERROR_CODE(projectionView.init(sizeof(glm::mat4), (void*)glm::value_ptr(pv)));
+		}
+		
 		return EC::ErrorCode();
 	}
 
@@ -92,7 +103,6 @@ namespace MathViz {
 			return std::sin(x);
 		};
 		plot.init(f, xRange, yRange, 1.0f, 100);
-		plot.upload();
 
 		FlatColor red = materialFactory.create<FlatColor>(glm::vec3(1.0f, 0.0f, 0.0f));
 		FlatColor blue = materialFactory.create<FlatColor>(glm::vec3{0.0f, 0.0f, 1.0f});
@@ -132,11 +142,13 @@ namespace MathViz {
 		const glm::mat4 perspective = glm::perspective(glm::radians(fov), (float)800 / (float)900, 0.1f, 100.0f);
 
 
+		projectionView.bind();
+
 		while (!glfwWindowShouldClose(window.get())) {
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			// drawNode(plotNode);
+			drawNode(plotNode);
 			drawNode(reimanNode);
 
 			glfwSwapBuffers(window.get());
@@ -155,26 +167,12 @@ namespace MathViz {
 		const GLUtils::Program& p = node.material->getProgram();
 		RETURN_ON_ERROR_CODE(p.bind());
 		RETURN_ON_ERROR_CODE(node.material->setUniforms());
-		RETURN_ON_ERROR_CODE(setMatrices(p));
 		if (node.flags & Node::Flags::Outline) {
 			RETURN_ON_ERROR_CODE(node.geometry->outline(*node.material, *node.outlineMaterial));
 		} else {
 			RETURN_ON_ERROR_CODE(node.geometry->draw());
 		}
 		p.unbind();
-		return EC::ErrorCode();
-	}
-
-	EC::ErrorCode Context::setMatrices(const GLUtils::Program& program) {
-		const glm::mat4 ortho = glm::ortho(-5.f, 5.f, -5.f, 5.f, -5.f, 5.f);
-
-		const glm::vec3 cameraPos(0.0f, 0.0f, -1.0f);
-		const glm::vec3 lookAtPoint(0.0f, 0.0f, 0.0f);
-		const glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
-		const glm::mat4 view = glm::lookAt(cameraPos, lookAtPoint, cameraUp);
-		const glm::mat4 perspective = glm::perspective(glm::radians(60.f), float(width) / float(height), -10.f, 10.f);
-		RETURN_ON_ERROR_CODE(program.setUniform("projection", ortho, false));
-		RETURN_ON_ERROR_CODE(program.setUniform("view", view, false));
 		return EC::ErrorCode();
 	}
 }

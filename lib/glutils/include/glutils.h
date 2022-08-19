@@ -92,12 +92,14 @@ namespace GLUtils {
 		~BufferBase();
 		/// Initialize the handle to the buffer. Does not allocate GPU memory
 		[[nodiscard]]
-		EC::ErrorCode init();
+		EC::ErrorCode init(int64_t size);
+		EC::ErrorCode init(int64_t size, void* source);
+		EC::ErrorCode init(int64_t size, void* source, const BufferLayout& layout);
 		/// Upload data to the GPU
 		/// @param[in] size - Size in bytes of the data to be uploaded
 		/// @param[in] data - Pointer to the data to be uploaded
 		[[nodiscard]]
-		EC::ErrorCode upload(int64_t size, const void* data);
+		// EC::ErrorCode upload(int64_t size, const void* data);
 		/// @brief Bind the buffer and set the attribute layout for it.
 		[[nodiscard]]
 		EC::ErrorCode setLayout(const BufferLayout& layout);
@@ -145,13 +147,13 @@ namespace GLUtils {
 	class UniformBuffer : public BufferBase {
 	public:
 		UniformBuffer() noexcept;
-		UniformBuffer(unsigned int bindingPosition) noexcept;
+		UniformBuffer(int bindingPosition) noexcept;
 		UniformBuffer(UniformBuffer&&) noexcept;
 		UniformBuffer& operator=(UniformBuffer&&) noexcept;;
 		void setBindingPosition(unsigned int bindingPosition);
 		EC::ErrorCode bind();
 	private:
-		unsigned int bindingPosition;
+		int bindingPosition;
 	};
 
 	/// Shader type program wrapper

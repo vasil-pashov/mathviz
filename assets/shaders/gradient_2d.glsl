@@ -1,17 +1,24 @@
 #shader vertex
 #version 330 core
 layout(location = 0) in vec3 position;
+
+layout(std140, binding = 0) uniform ProjectionView
+{
+	mat4 projectionView;
+};
+
 uniform vec3 start;
 uniform vec3 end;
 uniform vec3 colorStart;
 uniform vec3 colorEnd;
-uniform mat4 projection;
-uniform mat4 view;
+
+uniform mat4 model;
+
 out vec3 vertexColor;
 
 void main() {
 	float coeff = length(position - start);
-	gl_Position = projection * view * vec4(position, 1.0f);
+	gl_Position = projectionView * vec4(position, 1.0f);
 	vertexColor = colorStart + coeff * (colorEnd - colorStart);
 }
 

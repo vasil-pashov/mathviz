@@ -198,16 +198,32 @@ namespace GLUtils {
 		freeMem();
 	}
 
-	EC::ErrorCode BufferBase::init() {
+	EC::ErrorCode BufferBase::init(int64_t size, void* data, const BufferLayout& layout) {
 		RETURN_ON_GL_ERROR(glGenBuffers(1, &handle));
+		RETURN_ON_ERROR_CODE(bind());
+		RETURN_ON_GL_ERROR(glBufferData(type, size, data, GL_STATIC_DRAW));
+		RETURN_ON_ERROR_CODE(setLayout(layout));
+		RETURN_ON_ERROR_CODE(unbind());
 		return EC::ErrorCode();
 	}
 
-	EC::ErrorCode BufferBase::upload(int64_t size, const void* data) {
-		RETURN_ON_GL_ERROR(glBindBuffer(type, handle));
+	EC::ErrorCode BufferBase::init(int64_t size, void* data) {
+		RETURN_ON_GL_ERROR(glGenBuffers(1, &handle));
+		RETURN_ON_ERROR_CODE(bind());
 		RETURN_ON_GL_ERROR(glBufferData(type, size, data, GL_STATIC_DRAW));
+		RETURN_ON_ERROR_CODE(unbind());
 		return EC::ErrorCode();
 	}
+
+	EC::ErrorCode BufferBase::init(int64_t size) {
+		return init(size, nullptr);
+	}
+
+	// EC::ErrorCode BufferBase::upload(int64_t size, const void* data) {
+	// 	RETURN_ON_GL_ERROR(glBindBuffer(type, handle));
+	// 	RETURN_ON_GL_ERROR(glBufferData(type, size, data, GL_STATIC_DRAW));
+	// 	return EC::ErrorCode();
+	// }
 
 	EC::ErrorCode BufferBase::setLayout(const BufferLayout& layout) {
 		RETURN_ON_ERROR_CODE(bind());
@@ -250,7 +266,6 @@ namespace GLUtils {
 
 	EC::ErrorCode BufferBase::map(void*& map, BufferAccessType access) const {
 		const GLenum glAccess = convertBufferAccesType(access);
-		glBindBuffer(type, handle);
 		map = glMapBuffer(type, glAccess);
 		return checkGLError();
 	}
@@ -275,10 +290,10 @@ namespace GLUtils {
 
 	UniformBuffer::UniformBuffer() noexcept :
 		BufferBase(BufferType::Uniform),
-		bindingPosition(0)
+		bindingPosition(-1)
 	{ }
 
-	UniformBuffer::UniformBuffer(unsigned int bindingPosition) noexcept :
+	UniformBuffer::UniformBuffer(int bindingPosition) noexcept :
 		BufferBase(BufferType::Uniform),
 		bindingPosition(bindingPosition)
 	{ }
@@ -287,7 +302,7 @@ namespace GLUtils {
 		BufferBase(std::move(ub)),
 		bindingPosition(ub.bindingPosition)
 	{
-		ub.bindingPosition = 0;
+		ub.bindingPosition = -1;
 	}
 
 	UniformBuffer& UniformBuffer::operator=(UniformBuffer&& ub) noexcept {
@@ -302,6 +317,7 @@ namespace GLUtils {
 	}
 
 	EC::ErrorCode UniformBuffer::bind() {
+		assert(bindingPosition >= 0);
 		RETURN_ON_ERROR_CODE(BufferBase::bind());
 		RETURN_ON_GL_ERROR(glBindBufferBase(type, bindingPosition, handle));
 		return EC::ErrorCode();

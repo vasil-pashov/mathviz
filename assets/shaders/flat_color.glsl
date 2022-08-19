@@ -1,12 +1,19 @@
 #shader vertex
 #version 330 core
 layout(location = 0) in vec3 position;
+
+layout(std140, binding = 0) uniform ProjectionView
+{
+	mat4 projectionView;
+};
+
 uniform vec3 color;
-uniform mat4 view;
-uniform mat4 projection;
+uniform mat4 model;
+
 out vec3 vertexColor;
+
 void main() {
-	gl_Position = projection * view * vec4(position, 1.0f);
+	gl_Position = projectionView  * vec4(position, 1.0f);
 	vertexColor = color;
 }
 

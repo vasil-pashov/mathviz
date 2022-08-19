@@ -56,8 +56,6 @@ namespace MathViz {
 		/// antialiased lines only. In case of fractional value without antialiasing the width
 		/// will be rounded.
 		EC::ErrorCode init(const glm::vec3& start, const glm::vec3& end, float width);
-		/// @brief Upload the geometry to the GPU. Must be called after init.
-		EC::ErrorCode upload();
 		/// @brief Issue a draw call. Must be called only after init and upload are called. 
 		EC::ErrorCode draw() const override;
 		void freeMem();
@@ -123,19 +121,19 @@ namespace MathViz {
 			GLUtils::BufferLayout layout;
 			layout.addAttribute(GLUtils::VertexType::Float, 3);
 
-			RETURN_ON_ERROR_CODE(vertexBuffer.init());
 			RETURN_ON_ERROR_CODE(vao.init());
 			RETURN_ON_ERROR_CODE(vao.bind());
-			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
-			RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
-			RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+			RETURN_ON_ERROR_CODE(vertexBuffer.init(n * sizeof(glm::vec3), nullptr, layout));
 			RETURN_ON_ERROR_CODE(vao.unbind());
+
+			RETURN_ON_ERROR_CODE(upload());
 
 			return EC::ErrorCode();
 		}
-		EC::ErrorCode upload();
 		EC::ErrorCode draw() const override;
 	private:
+		EC::ErrorCode upload();
+
 		std::function<float(float)> f;
 		GLUtils::VertexBuffer vertexBuffer;
 		GLUtils::VAO vao;
@@ -207,13 +205,9 @@ namespace MathViz {
 			GLUtils::BufferLayout l;
 			l.addAttribute(GLUtils::VertexType::Float, 3);
 			const int64_t byteSize = vertices.size() * sizeof(vertices[0]);
-			RETURN_ON_ERROR_CODE(vertexBuffer.init());
-			RETURN_ON_ERROR_CODE(vertexBuffer.bind());
 			RETURN_ON_ERROR_CODE(vao.init());
 			RETURN_ON_ERROR_CODE(vao.bind());
-			RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(l));
-			RETURN_ON_ERROR_CODE(vertexBuffer.upload(byteSize, vertices.data()));
-			RETURN_ON_ERROR_CODE(vertexBuffer.unbind());
+			RETURN_ON_ERROR_CODE(vertexBuffer.init(byteSize, vertices.data(), l));
 			RETURN_ON_ERROR_CODE(vao.unbind());
 			return EC::ErrorCode();
 		}
@@ -231,7 +225,6 @@ namespace MathViz {
 	public:
 		Canvas();
 		EC::ErrorCode init(const glm::vec3& lowLeft, const glm::vec3& upRight);
-		EC::ErrorCode upload();
 		EC::ErrorCode draw() const override;
 	private:
 		glm::vec3 lowLeft;
