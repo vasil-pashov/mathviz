@@ -1,13 +1,22 @@
 project(mathviz)
 cmake_minimum_required(VERSION 3.22)
+
+include(FetchContent)
+
 set(CMAKE_CXX_STANDARD 17)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 add_subdirectory(lib/glutils)
 
+FetchContent_Declare(
+	error-code
+	GIT_REPOSITORY "https://github.com/vasil-pashov/error-code"
+	GIT_TAG "v0.1.1"
+)
+FetchContent_MakeAvailable(error-code)
+
 add_subdirectory(vendor/glm)
 add_subdirectory(vendor/glad)
-add_subdirectory(vendor/error-code)
 add_subdirectory(vendor/stb)
 
 # Override GLFW build options
