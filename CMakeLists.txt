@@ -1,7 +1,7 @@
 project(mathviz)
 cmake_minimum_required(VERSION 3.22)
 set(CMAKE_CXX_STANDARD 17)
-
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 add_subdirectory(lib/glutils)
 
@@ -61,7 +61,13 @@ function(create_shader_manifest)
 	target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/generated/include)
 endfunction()
 
-add_executable(${PROJECT_NAME} ${CPP} ${HEADERS})
+# Shader registry must happen before the target is created so that shader files are added to the
+# target. This enables to create a virtual folder in the IDE where we can see all shaders.
+register_shader("assets/shaders/flat_color.glsl" "FlatColor")
+register_shader("assets/shaders/morph.glsl" "Morph")
+register_shader("assets/shaders/gradient_2d.glsl" "Gradient2D")
+
+add_executable(${PROJECT_NAME} ${CPP} ${HEADERS} ${GLOBAL_SHADER_PATHS})
 target_link_libraries(${PROJECT_NAME} PRIVATE glutils glfw error_code)
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 
@@ -98,8 +104,19 @@ else()
   target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-register_shader("assets/shaders/flat_color.glsl" "FlatColor")
-register_shader("assets/shaders/morph.glsl" "Morph")
-register_shader("assets/shaders/gradient_2d.glsl" "Gradient2D")
-create_shader_manifest()
+# Add all shaders to the virtual IDE folder with the shaders. For some reason adding them with one call like this:
+# 	source_group(
+#		TREE "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
+#		PREFIX "Shaders"
+#		FILES "${GLOBAL_SHADER_PATHS}"
+#	)
+# does not work, so we add them one by one.
+foreach(shader_path ${GLOBAL_SHADER_PATHS})
+	source_group(
+		TREE "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders"
+		PREFIX "Shaders"
+		FILES "${shader_path}"
+	)
+endforeach()
 
+create_shader_manifest()
