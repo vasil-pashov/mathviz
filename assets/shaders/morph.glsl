@@ -6,14 +6,14 @@ layout(location = 1) in vec3 endPos;
 layout(std140, binding = 0) uniform ProjectionView
 {
 	mat4 projectionView;
+	mat4 model;
 };
 
 uniform float lerpCoeff;
-uniform mat4 model;
 
 void main() {
 	vec3 mixedPos = mix(startPos, endPos, lerpCoeff);
-	gl_Position = projectionView * vec4(mixedPos, 1.0f);
+	gl_Position = projectionView * model * vec4(mixedPos, 1.0f);
 }
 
 #shader fragment

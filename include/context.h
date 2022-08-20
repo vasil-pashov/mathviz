@@ -42,6 +42,7 @@ namespace MathViz {
 		// TODO: Create a camera class
 		glm::mat4 view;
 		glm::mat4 projection;
-		GLUtils::UniformBuffer projectionView;
+		/// ProjectionVew + Model transform
+		GLUtils::UniformBuffer transforms;
 	};
 }

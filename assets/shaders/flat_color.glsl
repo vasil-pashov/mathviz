@@ -5,15 +5,15 @@ layout(location = 0) in vec3 position;
 layout(std140, binding = 0) uniform ProjectionView
 {
 	mat4 projectionView;
+	mat4 model;
 };
 
 uniform vec3 color;
-uniform mat4 model;
 
 out vec3 vertexColor;
 
 void main() {
-	gl_Position = projectionView  * vec4(position, 1.0f);
+	gl_Position = projectionView * model * vec4(position, 1.0f);
 	vertexColor = color;
 }
 

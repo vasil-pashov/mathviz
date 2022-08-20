@@ -5,6 +5,7 @@ layout(location = 0) in vec3 position;
 layout(std140, binding = 0) uniform ProjectionView
 {
 	mat4 projectionView;
+	mat4 model;
 };
 
 uniform vec3 start;
@@ -12,13 +13,11 @@ uniform vec3 end;
 uniform vec3 colorStart;
 uniform vec3 colorEnd;
 
-uniform mat4 model;
-
 out vec3 vertexColor;
 
 void main() {
 	float coeff = length(position - start);
-	gl_Position = projectionView * vec4(position, 1.0f);
+	gl_Position = projectionView * model * vec4(position, 1.0f);
 	vertexColor = colorStart + coeff * (colorEnd - colorStart);
 }
 

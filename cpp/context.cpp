@@ -13,11 +13,18 @@
 namespace MathViz {
 
 	struct Node {
-		Node() : flags(0){ }
+		Node() :
+			transform(1),
+			material(nullptr),
+			outlineMaterial(nullptr),
+			geometry(nullptr),
+			flags(0)
+		{ }
 		enum Flags {
 			None = 0,
 			Outline = 1
 		};
+		glm::mat4 transform;
 		IMaterial* material;
 		IMaterial* outlineMaterial;
 		IGeometry* geometry;
@@ -33,7 +40,7 @@ namespace MathViz {
 		window(nullptr, &glfwDestroyWindow),
 		width(0),
 		height(0),
-		projectionView(ReservedUBOBindings::ProjectionView)
+		transforms(ReservedUBOBindings::ProjectionView)
 	{ }
 
 	Context::~Context() {
@@ -75,7 +82,7 @@ namespace MathViz {
 			const glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
 			view = glm::lookAt(cameraPos, lookAtPoint, cameraUp);
 			const glm::mat4 pv = projection * view;
-			RETURN_ON_ERROR_CODE(projectionView.init(sizeof(glm::mat4), (void*)glm::value_ptr(pv)));
+			RETURN_ON_ERROR_CODE(transforms.init(2 * sizeof(glm::mat4), (void*)glm::value_ptr(pv)));
 		}
 		
 		return EC::ErrorCode();
@@ -142,7 +149,7 @@ namespace MathViz {
 		const glm::mat4 perspective = glm::perspective(glm::radians(fov), (float)800 / (float)900, 0.1f, 100.0f);
 
 
-		projectionView.bind();
+		transforms.bind();
 
 		while (!glfwWindowShouldClose(window.get())) {
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -166,6 +173,7 @@ namespace MathViz {
 	EC::ErrorCode Context::drawNode(const Node& node) {
 		const GLUtils::Program& p = node.material->getProgram();
 		RETURN_ON_ERROR_CODE(p.bind());
+		RETURN_ON_ERROR_CODE(transforms.upload(sizeof(glm::mat4), sizeof(glm::mat4), (void*)glm::value_ptr(node.transform)));
 		RETURN_ON_ERROR_CODE(node.material->setUniforms());
 		if (node.flags & Node::Flags::Outline) {
 			RETURN_ON_ERROR_CODE(node.geometry->outline(*node.material, *node.outlineMaterial));
