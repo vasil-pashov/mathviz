@@ -1,5 +1,5 @@
 project(mathviz)
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.24)
 
 include(FetchContent)
 
@@ -11,14 +11,12 @@ FetchContent_Declare(
 	GIT_REPOSITORY "https://github.com/vasil-pashov/error-code"
 	GIT_TAG "v0.1.1"
 )
-FetchContent_MakeAvailable(error-code)
 
 FetchContent_Declare(
 	glm
 	GIT_REPOSITORY "https://github.com/g-truc/glm"
 	GIT_TAG "0.9.9.8"
 )
-FetchContent_MakeAvailable(glm)
 
 option(GLFW_BUILD_EXAMPLES OFF)
 option(GLFW_BUILD_TESTS OFF)
@@ -29,7 +27,12 @@ FetchContent_Declare(
 	GIT_REPOSITORY "https://github.com/glfw/glfw"
 	GIT_TAG "3.3.8"
 )
-FetchContent_MakeAvailable(glfw)
+
+FetchContent_MakeAvailable(
+	error-code
+	glm
+	glfw
+)
 
 
 add_subdirectory(vendor/glad)
