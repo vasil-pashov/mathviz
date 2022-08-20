@@ -6,8 +6,6 @@ include(FetchContent)
 set(CMAKE_CXX_STANDARD 17)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-add_subdirectory(lib/glutils)
-
 FetchContent_Declare(
 	error-code
 	GIT_REPOSITORY "https://github.com/vasil-pashov/error-code"
@@ -22,16 +20,21 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
-
-add_subdirectory(vendor/glad)
-add_subdirectory(vendor/stb)
-
-# Override GLFW build options
 option(GLFW_BUILD_EXAMPLES OFF)
 option(GLFW_BUILD_TESTS OFF)
 option(GLFW_BUILD_DOCS OFF)
 option(GLFW_INSTALL OFF)
-add_subdirectory(vendor/glfw)
+FetchContent_Declare(
+	glfw
+	GIT_REPOSITORY "https://github.com/glfw/glfw"
+	GIT_TAG "3.3.8"
+)
+FetchContent_MakeAvailable(glfw)
+
+
+add_subdirectory(vendor/glad)
+add_subdirectory(vendor/stb)
+add_subdirectory(lib/glutils)
 
 set(CPP
 	cpp/main.cpp
