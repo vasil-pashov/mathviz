@@ -327,6 +327,8 @@ namespace GLUtils {
 	// ===================== SHADER ============================
 	// =========================================================
 
+	Shader::Shader() : handle(0) { }
+
 	Shader::Shader(Shader&& other) noexcept : handle(other.handle) {
 		other.handle = 0;
 	}
@@ -455,8 +457,8 @@ namespace GLUtils {
 				shaderType = ShaderType::Vertex;
 			} else {
 				const int shaderTypeLen = joinedShader.find('\n', shaderStart) - currentPos;
-				const std::string shaderType = joinedShader.substr(currentPos, shaderTypeLen);
-				return EC::ErrorCode("Unknown shader type: %s", shaderType.c_str());
+				const std::string shaderTypeStr = joinedShader.substr(currentPos, shaderTypeLen);
+				return EC::ErrorCode("Unknown shader type: %s", shaderTypeStr.c_str());
 			}
 
 			RETURN_ON_ERROR_CODE(shaders[shaderType].loadFromSource(
@@ -489,6 +491,8 @@ namespace GLUtils {
 	// =========================================================
 	// ===================== PROGRAM ===========================
 	// =========================================================
+
+	Program::Program() : handle(0) { }
 
 	Program::Program(Program&& program) noexcept {
 		this->handle = program.handle;
@@ -576,6 +580,8 @@ namespace GLUtils {
 	// =========================================================
 	// ========================= VAO ===========================
 	// =========================================================
+
+	VAO::VAO() : handle(0) { }
 
 	VAO::~VAO() {
 		freeMem();

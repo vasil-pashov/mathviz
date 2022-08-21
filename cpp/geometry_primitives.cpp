@@ -54,8 +54,7 @@ namespace MathViz {
 
 		RETURN_ON_ERROR_CODE(vao.init());
 		RETURN_ON_ERROR_CODE(vao.bind());
-		RETURN_ON_ERROR_CODE(vertexBuffer.init(sizeof(data), (void*)data.data()), layout);
-		RETURN_ON_ERROR_CODE(vertexBuffer.setLayout(layout));
+		RETURN_ON_ERROR_CODE(vertexBuffer.init(sizeof(data), (void*)data.data(), layout));
 		RETURN_ON_ERROR_CODE(vao.unbind());
 		return EC::ErrorCode();
 	}
@@ -282,6 +281,10 @@ namespace MathViz {
 		}
 		return {x, y, 0.0f};
 	}
+
+	Curve::Curve() : vertexCount(0) { }
+
+	Morph2D::Morph2D() : vertexCount(0) { }
 
 	Morph2D::Morph2D(Morph2D&& other) noexcept :
 		vao(std::move(other.vao)),

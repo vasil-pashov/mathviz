@@ -241,6 +241,7 @@ namespace MathViz {
 
 	class Curve : public Morphable2D {
 	public:
+		Curve();
 		enum CurveFlags {
 			// The beginning of the curve should match the ending i.e.
 			// the first and the last vertex will be the same.
@@ -280,7 +281,7 @@ namespace MathViz {
 
 	class Morph2D : public IGeometry {
 	public:
-		Morph2D() = default;
+		Morph2D();
 		Morph2D(const Morph2D&) = delete;
 		Morph2D& operator=(const Morph2D&) = delete;
 		Morph2D(Morph2D&& other) noexcept;

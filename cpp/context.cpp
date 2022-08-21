@@ -54,7 +54,7 @@ namespace MathViz {
 		if (status != GLFW_TRUE) {
 			const char* description;
 			const int errorCode = glfwGetError(&description);
-			return EC::ErrorCode(status, "%s", description);
+			return EC::ErrorCode(errorCode, "%s", description);
 		}
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);

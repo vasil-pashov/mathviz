@@ -48,16 +48,6 @@ namespace GLUtils {
 		ReadWrite
 	};
 
-	/// Each buffer can contain multiple type of vertices, this is the layout of the vertex.
-	// struct AttributeLayout {
-	// 	int64_t offset; ///< Where in the buffer is the first vertex of this type in bytes
-	// 	int stride; ///< The space between two consecutive vertices of this type in bytes
-	// 	int slot; ///< Which slot in the shader is this going to occupy. Corresponds to layout (location=slot) in glsl
-	// 	short componentSize; ///< How much elements does the vertex contain. (In opengl it is in range [1;4]
-	// 	VertexType type; ///< The type of the vertex components. (They are all of the same type)
-	// 	bool normalized;
-	// };
-
 	struct AttributeLayout {
 		int count;
 		VertexType type;
@@ -67,7 +57,7 @@ namespace GLUtils {
 	class BufferLayout {
 	public:
 		BufferLayout() : stride(0) {}
-		BufferLayout(int count) : layout(count), stride(0) {}
+		explicit BufferLayout(int count) : layout(count), stride(0) {}
 		BufferLayout(const BufferLayout&) = delete;
 		BufferLayout& operator=(const BufferLayout&) = delete;
 		BufferLayout(BufferLayout&&) = delete;
@@ -122,7 +112,7 @@ namespace GLUtils {
 		[[nodiscard]]
 		EC::ErrorCode setLayoutInternal(const BufferLayout& layout);
 		/// @param[in] type - Type of the buffer e.g. vertex, index
-		BufferBase(BufferType type);
+		explicit BufferBase(BufferType type);
 		BufferBase(const BufferBase&) = delete;
 		BufferBase(BufferBase&&) noexcept;
 		BufferBase& operator=(const BufferBase&) = delete;
@@ -144,7 +134,7 @@ namespace GLUtils {
 	class UniformBuffer : public BufferBase {
 	public:
 		UniformBuffer() noexcept;
-		UniformBuffer(int bindingPosition) noexcept;
+		explicit UniformBuffer(int bindingPosition) noexcept;
 		UniformBuffer(UniformBuffer&&) noexcept;
 		UniformBuffer& operator=(UniformBuffer&&) noexcept;;
 		void setBindingPosition(unsigned int bindingPosition);
@@ -164,7 +154,7 @@ namespace GLUtils {
 	/// tells the gl pipeline what to do on each stage.
 	class Shader {
 	public:
-		Shader() = default;
+		Shader();
 		~Shader();
 		// Copy semantics
 		Shader(const Shader&) = delete;
@@ -218,7 +208,7 @@ namespace GLUtils {
 	/// Class which will link different shaders into one program and hold the handle to it
 	class Program {
 	public:
-		Program() = default;
+		Program();
 		~Program();
 		// Copy semantics
 		Program(const Program&) = delete;
@@ -258,7 +248,7 @@ namespace GLUtils {
 	/// It can also remember which index buffer was bound
 	class VAO {
 	public:
-		VAO() = default;
+		VAO();
 		~VAO();
 		// Copy semantics
 		VAO(const VAO&) = delete;

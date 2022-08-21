@@ -28,8 +28,8 @@ namespace MathViz {
 
 	class FlatColor : public IMaterial {
 	public:
-		FlatColor(const GLUtils::Program& p);
-		explicit FlatColor(const GLUtils::Program& p, const glm::vec3& color);
+		explicit FlatColor(const GLUtils::Program& p);
+		FlatColor(const GLUtils::Program& p, const glm::vec3& color);
 		void setColor(const glm::vec3& color);
 		glm::vec3 getColor() const;
 		EC::ErrorCode setUniforms() const override;
@@ -39,7 +39,7 @@ namespace MathViz {
 
 	class Gradient2D : public IMaterial {
 	public:
-		Gradient2D(const GLUtils::Program& p);
+		explicit Gradient2D(const GLUtils::Program& p);
 		Gradient2D(
 			const GLUtils::Program& p,
 			const glm::vec3& start,
