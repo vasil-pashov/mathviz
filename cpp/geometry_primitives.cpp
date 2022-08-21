@@ -303,8 +303,6 @@ namespace MathViz {
 	EC::ErrorCode Morph2D::init(const Morphable2D& start, const Morphable2D& end) {
 		vertexCount = std::max(start.getVertexCount(), end.getVertexCount());
 		std::vector<glm::vec3> data(vertexCount * 2);
-		const int startVerts = start.getVertexCount();
-		const int endVerts = end.getVertexCount();
 		for (int i = 0, idx = 0; i < vertexCount; ++i, idx += 2) {
 			data[idx] = start.getVertices()[i];
 			data[idx + 1] = end.getVertices()[i];
