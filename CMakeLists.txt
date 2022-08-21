@@ -2,6 +2,8 @@ project(mathviz)
 cmake_minimum_required(VERSION 3.24)
 
 include(FetchContent)
+include(ExternalProject)
+
 
 set(CMAKE_CXX_STANDARD 17)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -28,15 +30,32 @@ FetchContent_Declare(
 	GIT_TAG "3.3.8"
 )
 
+# Unfortunately STB does is not a CMake Project. So we would have to populate it manually
+# with FetchContent_Populate instead of using FetchContent_MakeAvailable. This will allow
+# to copy a custom CMakeLists.txt into the source dir of stb before running add_subdirectory.
+# 1. Declare the STB repo paths
+FetchContent_Declare(
+	stb
+	GIT_REPOSITORY https://github.com/nothings/stb.git
+	GIT_TAG af1a5bc352164740c1cc1354942b1c6b72eacb8a
+)
+# 2. Populate it. This will trigger the download and will also make available stb_SOURCE_DIR
+# variable in CMake
+FetchContent_Populate(stb)
+# 3. Copy the custom CMakeLists.txt into the STB source directory
+file(COPY_FILE ${CMAKE_SOURCE_DIR}/cmake/stb/CMakeLists.txt ${stb_SOURCE_DIR}/CMakeLists.txt)
+# 4. Add stb subdir. This will trigger the build
+add_subdirectory(${stb_SOURCE_DIR})
+
+# As per CMake official docs advice FetchContent_MakeAvailable should be called after
+# all calls to FetchContent_Declare. Do not include stb here as it was manually populated.
 FetchContent_MakeAvailable(
 	error-code
 	glm
 	glfw
 )
 
-
 add_subdirectory(vendor/glad)
-add_subdirectory(vendor/stb)
 add_subdirectory(lib/glutils)
 
 set(CPP
@@ -61,6 +80,10 @@ function(register_shader shader_path enum_name)
 	set(GLOBAL_SHADER_ENUMS ${GLOBAL_SHADER_ENUMS} PARENT_SCOPE)
 endfunction()
 
+# Create the CPP header file describing all shaders registered via register_shader
+# The file contains an array of relative paths to the shaders and an enum used to
+# index into the array. This must be called after the main project target was defied
+# (after the call to add_executable(${PROJECT_NAME}))
 function(create_shader_manifest)
 	set(first_enum TRUE)
 	set(shader_table_enum "enum class ShaderTable {\n")
