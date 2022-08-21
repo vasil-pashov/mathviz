@@ -202,7 +202,7 @@ namespace GLUtils {
 		RETURN_ON_GL_ERROR(glGenBuffers(1, &handle));
 		RETURN_ON_ERROR_CODE(bind());
 		RETURN_ON_GL_ERROR(glBufferData(type, size, data, GL_STATIC_DRAW));
-		RETURN_ON_ERROR_CODE(setLayout(layout));
+		RETURN_ON_ERROR_CODE(setLayoutInternal(layout));
 		RETURN_ON_ERROR_CODE(unbind());
 		return EC::ErrorCode();
 	}
@@ -220,14 +220,19 @@ namespace GLUtils {
 	}
 
 	EC::ErrorCode BufferBase::upload(int64_t offset, int64_t size, const void* data) {
-		RETURN_ON_GL_ERROR(bind());
+		RETURN_ON_ERROR_CODE(bind());
 		RETURN_ON_GL_ERROR(glBufferSubData(type, offset, size, data));
-		RETURN_ON_GL_ERROR(unbind());
+		RETURN_ON_ERROR_CODE(unbind());
 		return EC::ErrorCode();
 	}
 
 	EC::ErrorCode BufferBase::setLayout(const BufferLayout& layout) {
 		RETURN_ON_ERROR_CODE(bind());
+		RETURN_ON_ERROR_CODE(setLayout(layout));
+		RETURN_ON_ERROR_CODE(unbind());
+	}
+
+	EC::ErrorCode BufferBase::setLayoutInternal(const BufferLayout& layout) {
 		int offset = 0;
 		for (int i = 0; i < layout.getAttributes().size(); ++i) {
 			AttributeLayout attribute = layout.getAttributes()[i];
@@ -256,12 +261,6 @@ namespace GLUtils {
 
 	EC::ErrorCode BufferBase::bind() const {
 		RETURN_ON_GL_ERROR(glBindBuffer(type, handle));
-		return EC::ErrorCode();
-	}
-
-	EC::ErrorCode BufferBase::bind(const int bindingIndex) {
-		RETURN_ON_GL_ERROR(bind());
-		RETURN_ON_GL_ERROR(glBindBufferBase(type, bindingIndex, handle));
 		return EC::ErrorCode();
 	}
 

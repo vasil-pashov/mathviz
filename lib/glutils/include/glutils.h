@@ -112,10 +112,6 @@ namespace GLUtils {
 		/// Binds the current buffer
 		[[nodiscard]]
 		EC::ErrorCode bind() const;
-		/// Binds the current buffer to a shader binding. Used for UBO and SSBO
-		/// @param[in] bindingIndex The binding index to which the buffer will be bound. Currently must be specified in the shader
-		[[nodiscard]]
-		EC::ErrorCode bind(const int bindingIndex);
 		[[nodiscard]]
 		EC::ErrorCode unbind() const;
 		[[nodiscard]]
@@ -123,6 +119,8 @@ namespace GLUtils {
 		[[nodiscard]]
 		EC::ErrorCode unmap() const;
 	protected:
+		[[nodiscard]]
+		EC::ErrorCode setLayoutInternal(const BufferLayout& layout);
 		/// @param[in] type - Type of the buffer e.g. vertex, index
 		BufferBase(BufferType type);
 		BufferBase(const BufferBase&) = delete;
