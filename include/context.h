@@ -22,6 +22,7 @@ namespace MathViz {
 		~Context();
 		[[nodiscard]]
 		EC::ErrorCode init(int width, int height);
+		EC::ErrorCode initImgui();
 		void onResize(int width, int height);
 		void freeMem();
 		[[nodiscard]]

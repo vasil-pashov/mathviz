@@ -9,6 +9,9 @@
 #include "geometry_primitives.h"
 #include "shader_bindings.h"
 #include "material.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 namespace MathViz {
 
@@ -85,6 +88,37 @@ namespace MathViz {
 			RETURN_ON_ERROR_CODE(transforms.init(2 * sizeof(glm::mat4), (void*)glm::value_ptr(pv)));
 		}
 		
+		RETURN_ON_ERROR_CODE(initImgui());
+
+		return EC::ErrorCode();
+	}
+
+	EC::ErrorCode Context::initImgui() {
+		// Setup Dear ImGui context
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+		//io.ConfigViewportsNoAutoMerge = true;
+		//io.ConfigViewportsNoTaskBarIcon = true;
+
+		// Setup Dear ImGui style
+		ImGui::StyleColorsDark();
+		//ImGui::StyleColorsLight();
+
+		// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+		ImGuiStyle& style = ImGui::GetStyle();
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+			style.WindowRounding = 0.0f;
+			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+		}
+
+		// Setup Platform/Renderer backends
+		ImGui_ImplGlfw_InitForOpenGL(window.get(), true);
+		ImGui_ImplOpenGL3_Init("#version 150");
 		return EC::ErrorCode();
 	}
 
@@ -97,6 +131,11 @@ namespace MathViz {
 	}
 
 	void Context::freeMem() {
+
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
+
 		materialFactory.freeMem();
 		window.reset();
 		glfwTerminate();
@@ -151,16 +190,45 @@ namespace MathViz {
 
 		transforms.bind();
 
+
+		// ImGui state
+		ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.00f);
+
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+
 		while (!glfwWindowShouldClose(window.get())) {
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			glfwPollEvents();
+
+			// Start the Dear ImGui frame
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
+
+			{
+				ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+				ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+				ImGui::End();
+			}
+
+			ImGui::Render();
+
+			glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			drawNode(plotNode);
 			drawNode(reimanNode);
 
-			glfwSwapBuffers(window.get());
+			if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+				GLFWwindow* backup_current_context = glfwGetCurrentContext();
+				ImGui::UpdatePlatformWindows();
+				ImGui::RenderPlatformWindowsDefault();
+				glfwMakeContextCurrent(backup_current_context);
+			}
 
-			glfwPollEvents();
+			glfwSwapBuffers(window.get());
 		}
 		return EC::ErrorCode();
 	}
