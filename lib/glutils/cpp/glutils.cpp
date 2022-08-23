@@ -600,17 +600,20 @@ namespace GLUtils {
 
 	[[nodiscard]]
 	EC::ErrorCode VAO::init() {
+		assert(handle == 0);
 		RETURN_ON_GL_ERROR(glGenVertexArrays(1, &handle));
 		return EC::ErrorCode();
 	}
 
 	[[nodiscard]]
 	EC::ErrorCode VAO::bind() const {
+		assert(handle != 0);
 		RETURN_ON_GL_ERROR(glBindVertexArray(handle));
 		return EC::ErrorCode();
 	}
 
 	void VAO::freeMem() {
+		assert(handle != 0);
 		glDeleteVertexArrays(1, &handle);
 	}
 

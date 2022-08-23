@@ -12,6 +12,8 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui_stdlib.h"
+#include "expression.h"
 
 namespace MathViz {
 
@@ -80,7 +82,7 @@ namespace MathViz {
 
 		{
 			projection = glm::ortho(-5.f, 5.f, -5.f, 5.f, -5.f, 5.f);
-			const glm::vec3 cameraPos(0.0f, 0.0f, -1.0f);
+			const glm::vec3 cameraPos(0.0f, 0.0f, 1.0f);
 			const glm::vec3 lookAtPoint(0.0f, 0.0f, 0.0f);
 			const glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
 			view = glm::lookAt(cameraPos, lookAtPoint, cameraUp);
@@ -193,6 +195,7 @@ namespace MathViz {
 
 		// ImGui state
 		ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.00f);
+		std::string expressionText;
 
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 
@@ -205,11 +208,30 @@ namespace MathViz {
 			ImGui::NewFrame();
 
 			{
-				ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+				ImGui::Begin("MathViz!");                          // Create a window called "Hello, world!" and append into it.
 
 				ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
-				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+				ImGui::Text(
+					"Application average %.3f ms/frame (%.1f FPS)",
+					1000.0f / ImGui::GetIO().Framerate,
+					ImGui::GetIO().Framerate
+				);
+				ImGui::InputText("Function", &expressionText);
+
+				if (ImGui::Button("Plot")) {
+					MathViz::Expression expr;
+					const EC::ErrorCode& err = expr.init(expressionText.c_str());
+					assert(err.hasError() == false);
+					plot.reset([&expr](float x) {
+						std::unordered_map<char, float> vals;
+						vals['x'] = x;
+						float res;
+						expr.evaluate(&vals, res);
+						return res;
+					});
+				}
+
 				ImGui::End();
 			}
 
@@ -219,7 +241,7 @@ namespace MathViz {
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			drawNode(plotNode);
-			drawNode(reimanNode);
+			// drawNode(reimanNode);
 
 			if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
 				GLFWwindow* backup_current_context = glfwGetCurrentContext();

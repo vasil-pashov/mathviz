@@ -43,7 +43,7 @@ FetchContent_Declare(
 FetchContent_Declare(
 	imgui
 	GIT_REPOSITORY "https://github.com/ocornut/imgui.git"
-	GIT_TAG "e9f50fb87c1037e06a9b0e93484fd794a32cb835"
+	GIT_TAG e9f50fb87c1037e06a9b0e93484fd794a32cb835
 )
 FetchContent_Populate(imgui)
 file(COPY_FILE ${CMAKE_SOURCE_DIR}/cmake/imgui/CMakeLists.txt ${imgui_SOURCE_DIR}/CMakeLists.txt)
@@ -74,11 +74,13 @@ set(CPP
 	cpp/geometry_primitives.cpp
 	cpp/context.cpp
 	cpp/material.cpp
+	cpp/expression.cpp
 )
 set(HEADERS
 	include/geometry_primitives.h
 	include/context.h
 	include/material.h
+	include/expression.h
 )
 
 set(GLOBAL_SHADER_PATHS)
