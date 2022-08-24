@@ -142,6 +142,7 @@ namespace MathViz {
 			RETURN_ON_ERROR_CODE(upload());
 			return EC::ErrorCode();
 		}
+		void setLineWidth(const float lineWidth);
 	private:
 		EC::ErrorCode upload();
 

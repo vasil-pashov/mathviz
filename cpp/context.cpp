@@ -196,7 +196,7 @@ namespace MathViz {
 		// ImGui state
 		ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.00f);
 		std::string expressionText;
-
+		float plotThickness = 1.0f;
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 
 		while (!glfwWindowShouldClose(window.get())) {
@@ -232,6 +232,8 @@ namespace MathViz {
 					});
 				}
 
+				ImGui::SliderFloat("float", &plotThickness, 0.0f, 20.0f);
+
 				ImGui::End();
 			}
 
@@ -240,6 +242,7 @@ namespace MathViz {
 			glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+			plot.setLineWidth(plotThickness);
 			drawNode(plotNode);
 			// drawNode(reimanNode);
 
