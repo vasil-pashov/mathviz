@@ -208,9 +208,9 @@ namespace MathViz {
 			ImGui::NewFrame();
 
 			{
-				ImGui::Begin("MathViz!");                          // Create a window called "Hello, world!" and append into it.
+				const bool collapsed = ImGui::Begin("MathViz!");
 
-				ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+				ImGui::ColorEdit3("clear color", (float*)&clear_color);
 
 				ImGui::Text(
 					"Application average %.3f ms/frame (%.1f FPS)",
@@ -250,6 +250,7 @@ namespace MathViz {
 				glfwMakeContextCurrent(backup_current_context);
 			}
 
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 			glfwSwapBuffers(window.get());
 		}
 		return EC::ErrorCode();
