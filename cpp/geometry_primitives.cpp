@@ -169,6 +169,10 @@ namespace MathViz {
 		return EC::ErrorCode();
 	}
 
+	void Plot2D::setLineWidth(const float lineWidth) {
+		this->lineWidth = lineWidth;
+	}
+
 	ReimanArea::ReimanArea() :
 		vertexCount(0),
 		barCount(0)

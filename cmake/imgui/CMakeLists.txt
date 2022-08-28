@@ -14,12 +14,27 @@ set(BACKEND_SOURCES
 	backends/imgui_impl_opengl3.cpp
 )
 
-file(GLOB IMGUI_SOURCES imgui*.cpp)
+file(GLOB BASE_IMGUI_SOURCES imgui*.cpp)
 
-add_library(${PROJECT_NAME} STATIC ${BACKEND_SOURCES} ${IMGUI_SOURCES})
+set(ADDITIONAL_IMGUI_SOURCES
+    misc/cpp/imgui_stdlib.cpp
+)
+
+set(ADDITIONAL_HEADERS
+    misc/cpp/imgui_stdlib.h
+)
+
+add_library(${PROJECT_NAME}
+    STATIC
+        ${BACKEND_SOURCES}
+        ${BASE_IMGUI_SOURCES}
+        ${ADDITIONAL_IMGUI_SOURCES}
+        ${ADDITIONAL_HEADERS}
+)
 target_include_directories(${PROJECT_NAME}
 	PUBLIC
 		backends
 		${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/misc/cpp
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC glfw)

@@ -131,6 +131,18 @@ namespace MathViz {
 			return EC::ErrorCode();
 		}
 		EC::ErrorCode draw() const override;
+		template<typename FuncT>
+		EC::ErrorCode reset(FuncT&& f) {
+			this->f = std::forward<FuncT>(f);
+			// TODO:
+			// this->xRange = xRange;
+			// this->yRange = yRange;
+			// this->lineWidth = lineWidth;
+			// this->n = n;
+			RETURN_ON_ERROR_CODE(upload());
+			return EC::ErrorCode();
+		}
+		void setLineWidth(const float lineWidth);
 	private:
 		EC::ErrorCode upload();
 

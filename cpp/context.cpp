@@ -12,6 +12,8 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui_stdlib.h"
+#include "expression.h"
 
 namespace MathViz {
 
@@ -80,7 +82,7 @@ namespace MathViz {
 
 		{
 			projection = glm::ortho(-5.f, 5.f, -5.f, 5.f, -5.f, 5.f);
-			const glm::vec3 cameraPos(0.0f, 0.0f, -1.0f);
+			const glm::vec3 cameraPos(0.0f, 0.0f, 1.0f);
 			const glm::vec3 lookAtPoint(0.0f, 0.0f, 0.0f);
 			const glm::vec3 cameraUp(0.0f, 1.0f, 0.0f);
 			view = glm::lookAt(cameraPos, lookAtPoint, cameraUp);
@@ -193,9 +195,12 @@ namespace MathViz {
 
 		// ImGui state
 		ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.00f);
-
+		std::string expressionText;
+		float plotThickness = 1.0f;
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 
+
+		EC::ErrorCode runtimeErr;
 		while (!glfwWindowShouldClose(window.get())) {
 			glfwPollEvents();
 
@@ -205,11 +210,45 @@ namespace MathViz {
 			ImGui::NewFrame();
 
 			{
-				ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+				const bool collapsed = ImGui::Begin("MathViz!");
 
-				ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+				ImGui::ColorEdit3("clear color", (float*)&clear_color);
 
-				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+				ImGui::Text(
+					"Application average %.3f ms/frame (%.1f FPS)",
+					1000.0f / ImGui::GetIO().Framerate,
+					ImGui::GetIO().Framerate
+				);
+				ImGui::InputText("Function", &expressionText);
+
+				bool expressionErrorPopupOpen;
+				if (ImGui::Button("Plot")) {
+					MathViz::Expression expr;
+					runtimeErr = expr.init(expressionText.c_str());
+					if (runtimeErr.hasError()) {
+						ImGui::OpenPopup("Expression error");
+						expressionErrorPopupOpen = true;
+					} else {
+						expressionErrorPopupOpen = false;
+						plot.reset([&expr](float x) {
+							std::unordered_map<char, float> vals;
+							vals['x'] = x;
+							float res;
+							expr.evaluate(&vals, res);
+							return res;
+						});
+					}
+				}
+
+				if (ImGui::BeginPopupModal("Expression error", &expressionErrorPopupOpen)) {
+					ImGui::Text("%s\n", runtimeErr.getMessage());
+					if (ImGui::Button("Close"))
+						ImGui::CloseCurrentPopup();
+					ImGui::EndPopup();
+				}
+
+				ImGui::SliderFloat("float", &plotThickness, 0.0f, 20.0f);
+
 				ImGui::End();
 			}
 
@@ -218,8 +257,9 @@ namespace MathViz {
 			glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+			plot.setLineWidth(plotThickness);
 			drawNode(plotNode);
-			drawNode(reimanNode);
+			// drawNode(reimanNode);
 
 			if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
 				GLFWwindow* backup_current_context = glfwGetCurrentContext();
@@ -228,6 +268,7 @@ namespace MathViz {
 				glfwMakeContextCurrent(backup_current_context);
 			}
 
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 			glfwSwapBuffers(window.get());
 		}
 		return EC::ErrorCode();
