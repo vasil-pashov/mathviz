@@ -199,6 +199,8 @@ namespace MathViz {
 		float plotThickness = 1.0f;
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 
+
+		EC::ErrorCode runtimeErr;
 		while (!glfwWindowShouldClose(window.get())) {
 			glfwPollEvents();
 
@@ -219,17 +221,30 @@ namespace MathViz {
 				);
 				ImGui::InputText("Function", &expressionText);
 
+				bool expressionErrorPopupOpen;
 				if (ImGui::Button("Plot")) {
 					MathViz::Expression expr;
-					const EC::ErrorCode& err = expr.init(expressionText.c_str());
-					assert(err.hasError() == false);
-					plot.reset([&expr](float x) {
-						std::unordered_map<char, float> vals;
-						vals['x'] = x;
-						float res;
-						expr.evaluate(&vals, res);
-						return res;
-					});
+					runtimeErr = expr.init(expressionText.c_str());
+					if (runtimeErr.hasError()) {
+						ImGui::OpenPopup("Expression error");
+						expressionErrorPopupOpen = true;
+					} else {
+						expressionErrorPopupOpen = false;
+						plot.reset([&expr](float x) {
+							std::unordered_map<char, float> vals;
+							vals['x'] = x;
+							float res;
+							expr.evaluate(&vals, res);
+							return res;
+						});
+					}
+				}
+
+				if (ImGui::BeginPopupModal("Expression error", &expressionErrorPopupOpen)) {
+					ImGui::Text("%s\n", runtimeErr.getMessage());
+					if (ImGui::Button("Close"))
+						ImGui::CloseCurrentPopup();
+					ImGui::EndPopup();
 				}
 
 				ImGui::SliderFloat("float", &plotThickness, 0.0f, 20.0f);
